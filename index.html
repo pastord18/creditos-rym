@@ -402,14 +402,10 @@ const GD = {
       const waitGapi = setInterval(() => {
         if (window.gapi && window.google && window.google.accounts) {
           clearInterval(waitGapi);
-          gapi.load('client', async () => {
-            try {
-              await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
-            } catch(e) {
-              console.error('GD gapi.client.init error', e);
-              resolve(false);
-              return;
-            }
+
+          // 1) Inicializar tokenClient INMEDIATAMENTE — no depende del discovery doc de Drive,
+          //    así el botón "Conectar con Google" funciona aunque falle la carga de la API de Drive.
+          try {
             GD.tokenClient = google.accounts.oauth2.initTokenClient({
               client_id: GD.CLIENT_ID,
               scope: GD.SCOPES,
@@ -422,15 +418,18 @@ const GD = {
                   return;
                 }
                 GD.accessToken = resp.access_token;
-                gapi.client.setToken({ access_token: resp.access_token });
+                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: resp.access_token });
+                // Asegurar que el cliente Drive esté cargado antes de usarlo
+                await GD._ensureDriveClientLoaded();
                 await GD._ensureFolder();
                 await GD._loadGlobalFile();
                 GD._showStatus('✅ Google Drive conectado', 'ok');
-                _updateGDLoginBtn();
+                if (typeof _updateGDLoginBtn === 'function') _updateGDLoginBtn();
                 resolve(true);
               },
               error_callback: (err) => {
                 console.error('GD tokenClient error_callback', err);
+                GD._diagnostico = 'error_callback del tokenClient: ' + JSON.stringify(err);
                 GD._showStatus('⚠ Error de conexión', 'err');
                 if(err && err.type !== 'popup_closed') {
                   alert('No se pudo abrir la ventana de Google.\n\nVerifica que:\n1. Tu bloqueador de anuncios no esté bloqueando popups de accounts.google.com\n2. La URL "' + window.location.origin + '" esté agregada en Google Cloud Console → Credenciales → Orígenes autorizados de JavaScript');
@@ -438,11 +437,20 @@ const GD = {
                 resolve(false);
               }
             });
-            // NOTE: no intentamos popup silencioso automático al cargar —
-            // muchos navegadores/bloqueadores cancelan esto y dejan el SDK en mal estado.
-            // El usuario debe hacer clic en "Conectar con Google" explícitamente.
-            resolve(false);
+          } catch(e) {
+            console.error('GD initTokenClient error', e);
+            GD._diagnostico = 'Error creando tokenClient: ' + e.message;
+          }
+
+          // 2) Cargar el cliente gapi.client por separado (para llamadas a la Drive API).
+          //    Si esto falla, el login con Google igual funciona; solo fallarán las
+          //    operaciones de lectura/escritura en Drive hasta que se resuelva.
+          GD._ensureDriveClientLoaded().catch(e=>{
+            console.error('GD: fallo cargando cliente Drive (discovery doc)', e);
+            GD._diagnostico = 'No se pudo cargar la API de Drive (discovery doc). Esto puede deberse a un bloqueador de anuncios o de cookies de terceros bloqueando www.googleapis.com.\nDetalle: ' + (e&&e.message?e.message:JSON.stringify(e));
           });
+
+          resolve(false); // resolución temprana: el login está listo aunque el discovery doc tarde
         }
       }, 200);
       // Timeout de seguridad si Google nunca carga (script bloqueado, sin internet, etc.)
@@ -461,6 +469,28 @@ const GD = {
         }
       }, 8000);
     });
+  },
+
+  // ── Carga gapi.client + discovery doc de Drive (idempotente) ─────────
+  _driveClientLoaded: false,
+  _driveClientLoading: null,
+  async _ensureDriveClientLoaded() {
+    if (GD._driveClientLoaded) return true;
+    if (GD._driveClientLoading) return GD._driveClientLoading;
+    GD._driveClientLoading = new Promise((resolve, reject) => {
+      gapi.load('client', async () => {
+        try {
+          await gapi.client.init({});
+          await gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+          GD._driveClientLoaded = true;
+          if (GD.accessToken) gapi.client.setToken({ access_token: GD.accessToken });
+          resolve(true);
+        } catch(e) {
+          reject(e);
+        }
+      });
+    });
+    return GD._driveClientLoading;
   },
 
   // ── Request token with user interaction (login button) ──────────────
@@ -6419,6 +6449,7 @@ function gdDiagUpdate(){
   l.push('window.google: ' + (window.google?'✅ cargado':'❌ NO cargado'));
   l.push('window.google.accounts: ' + (window.google&&window.google.accounts?'✅ cargado':'❌ NO cargado'));
   l.push('GD.tokenClient: ' + (GD.tokenClient?'✅ inicializado':'❌ NO inicializado'));
+  l.push('Cliente Drive (discovery doc): ' + (GD._driveClientLoaded?'✅ cargado':'❌ NO cargado'));
   l.push('Origen actual: ' + window.location.origin);
   if(window._gdScriptError) l.push('Error de script: ' + window._gdScriptError);
   if(GD._diagnostico) l.push('\n' + GD._diagnostico);
