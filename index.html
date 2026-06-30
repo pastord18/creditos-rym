@@ -202,6 +202,30 @@ tr:hover td{background:#FAFBFF}
     </div>
     <div class="login-footer">🔒 Acceso restringido — Solo personal autorizado</div>
 
+    <!-- GOOGLE DRIVE EN LOGIN — para sincronizar usuarios/carteras al entrar desde otro dispositivo/navegador -->
+    <div id="login-gd-panel" style="margin-top:16px;padding:12px 14px;background:#F4F7FF;border:1.5px solid #C9D6F0;border-radius:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="font-size:11.5px;color:#1A3260;font-weight:600">
+          ☁ Sincronizar con Google Drive
+        </span>
+        <span id="login-gd-status" style="font-size:10.5px;font-weight:700;color:#8A9AB8">⏳ Verificando...</span>
+      </div>
+      <div id="login-gd-desc" style="font-size:10.5px;color:#5A6E9A;margin-top:4px;line-height:1.4">
+        Conecta tu cuenta de Google para ver las mismas carteras y datos que en tu otro dispositivo.
+      </div>
+      <button id="login-gd-btn" onclick="GD.requestToken()" style="display:none;margin-top:8px;width:100%;
+        align-items:center;justify-content:center;gap:6px;padding:7px 12px;border-radius:7px;
+        border:1.5px solid #4285F4;background:#fff;color:#4285F4;font-size:11.5px;font-weight:700;cursor:pointer">
+        <svg width="13" height="13" viewBox="0 0 24 24" style="flex-shrink:0">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Conectar con Google
+      </button>
+    </div>
+
     <!-- PANEL DE RECUPERACIÓN DE EMERGENCIA -->
     <div style="margin-top:18px;border-top:1px solid #E0E8F0;padding-top:14px">
       <details>
@@ -412,6 +436,20 @@ const GD = {
     await GD._loadGlobalFile();
     GD._showStatus('✅ Google Drive conectado', 'ok');
     if (typeof _updateGDLoginBtn === 'function') _updateGDLoginBtn();
+    // Si estamos en la pantalla de login (incógnito / dispositivo nuevo) o en
+    // selección de cartera, refrescar el panel y volver a mostrar carteras
+    // ya sincronizadas desde Drive.
+    const loginScreen=document.getElementById('login-screen');
+    const carteraScreen=document.getElementById('cartera-screen');
+    const loginGdStatus=document.getElementById('login-gd-status');
+    const loginGdBtnEl=document.getElementById('login-gd-btn');
+    const loginGdDescEl=document.getElementById('login-gd-desc');
+    if(loginGdStatus){loginGdStatus.textContent='✅ Conectado';loginGdStatus.style.color='#1A7A4A';}
+    if(loginGdBtnEl) loginGdBtnEl.style.display='none';
+    if(loginGdDescEl) loginGdDescEl.textContent='Tus datos están sincronizados con Google Drive.';
+    if(carteraScreen && carteraScreen.style.display!=='none' && typeof showCarteraScreen==='function'){
+      showCarteraScreen();
+    }
   },
   _onTokenErrorCallback: (err) => {
     console.error('GD tokenClient error_callback', err);
@@ -7759,29 +7797,64 @@ function eliminarUsuario(id){
 // ══════════════════════════════════════════════════════
 (function init(){
   populateLoginUsuarios();
-  const sesion=GLOBAL.sesion;
-  if((sesion&&sesion.usuario)){
-    const user=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
-    if(user){
-      GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
-      // Restore cartera if was active
-      const savedCartera=lsGet('cc_active_cartera',null);
-      if(savedCartera&&GLOBAL.carteras.find(c=>c.id===savedCartera)){
-        // Check access
-        const cu=GLOBAL.carterasUsuarios;
-        const hasAccess=user.rol==='admin'||(cu[savedCartera]||[]).includes(user.usuario);
-        if(hasAccess){
-          document.getElementById('login-screen').style.display='none';
-          entrarCartera(savedCartera);
-          return;
+
+  function continueInit(){
+    const sesion=GLOBAL.sesion;
+    if((sesion&&sesion.usuario)){
+      const user=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
+      if(user){
+        GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
+        // Restore cartera if was active
+        const savedCartera=lsGet('cc_active_cartera',null);
+        if(savedCartera&&GLOBAL.carteras.find(c=>c.id===savedCartera)){
+          // Check access
+          const cu=GLOBAL.carterasUsuarios;
+          const hasAccess=user.rol==='admin'||(cu[savedCartera]||[]).includes(user.usuario);
+          if(hasAccess){
+            document.getElementById('login-screen').style.display='none';
+            entrarCartera(savedCartera);
+            return;
+          }
         }
+        document.getElementById('login-screen').style.display='none';
+        showCarteraScreen();
+      } else {
+        GLOBAL.sesion=null;
       }
-      document.getElementById('login-screen').style.display='none';
-      showCarteraScreen();
-    } else {
-      GLOBAL.sesion=null;
     }
   }
+
+  // Iniciar conexión a Google Drive ANTES de mostrar login/cartera —
+  // así si ya autorizaste antes en este navegador, los datos (usuarios, carteras)
+  // se sincronizan desde Drive antes de decidir qué pantalla mostrar.
+  // Esto es clave para que, en un navegador/dispositivo nuevo (incógnito, otro PC),
+  // tras conectar Drive aparezcan las mismas carteras y datos que en el original.
+  const loginGdStatus=document.getElementById('login-gd-status');
+  const loginGdBtn=document.getElementById('login-gd-btn');
+  const loginGdDesc=document.getElementById('login-gd-desc');
+  if(loginGdStatus) loginGdStatus.textContent='⏳ Verificando...';
+
+  GD.init().then(connected => {
+    _updateGDLoginBtn();
+    const statusEl=document.getElementById('gd-status');
+    const loginBtnEl=document.getElementById('gd-login-btn');
+    if(connected){
+      if(statusEl) statusEl.style.display='inline-block';
+      if(loginBtnEl) loginBtnEl.style.display='none';
+      if(loginGdStatus){loginGdStatus.textContent='✅ Conectado';loginGdStatus.style.color='#1A7A4A';}
+      if(loginGdBtn) loginGdBtn.style.display='none';
+      if(loginGdDesc) loginGdDesc.textContent='Tus datos están sincronizados con Google Drive.';
+    } else {
+      if(loginBtnEl) loginBtnEl.style.display='inline-flex';
+      if(loginGdStatus){loginGdStatus.textContent='⚪ No conectado';loginGdStatus.style.color='#8A9AB8';}
+      if(loginGdBtn) loginGdBtn.style.display='flex';
+    }
+    continueInit();
+  }).catch(()=>{
+    if(loginGdStatus){loginGdStatus.textContent='⚠ Error';loginGdStatus.style.color='#C0392B';}
+    if(loginGdBtn) loginGdBtn.style.display='flex';
+    continueInit();
+  });
 })();
 </script>
 </body>
