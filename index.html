@@ -401,33 +401,77 @@ const GD = {
         if (window.gapi && window.google && window.google.accounts) {
           clearInterval(waitGapi);
           gapi.load('client', async () => {
-            await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+            try {
+              await gapi.client.init({ discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'] });
+            } catch(e) {
+              console.error('GD gapi.client.init error', e);
+              resolve(false);
+              return;
+            }
             GD.tokenClient = google.accounts.oauth2.initTokenClient({
               client_id: GD.CLIENT_ID,
               scope: GD.SCOPES,
               callback: async (resp) => {
-                if (resp.error) { console.error('GD token error', resp); return; }
+                if (resp.error) {
+                  console.error('GD token error', resp);
+                  GD._showStatus('⚠ Error: ' + (resp.error_description || resp.error), 'err');
+                  alert('Error al conectar con Google Drive:\n\n' + (resp.error_description || resp.error) +
+                    '\n\nVerifica que esta URL esté agregada en "Orígenes autorizados de JavaScript" en Google Cloud Console:\n' + window.location.origin);
+                  return;
+                }
                 GD.accessToken = resp.access_token;
                 gapi.client.setToken({ access_token: resp.access_token });
                 await GD._ensureFolder();
                 await GD._loadGlobalFile();
                 GD._showStatus('✅ Google Drive conectado', 'ok');
+                _updateGDLoginBtn();
                 resolve(true);
+              },
+              error_callback: (err) => {
+                console.error('GD tokenClient error_callback', err);
+                GD._showStatus('⚠ Error de conexión', 'err');
+                if(err && err.type !== 'popup_closed') {
+                  alert('No se pudo abrir la ventana de Google.\n\nVerifica que:\n1. Tu bloqueador de anuncios no esté bloqueando popups de accounts.google.com\n2. La URL "' + window.location.origin + '" esté agregada en Google Cloud Console → Credenciales → Orígenes autorizados de JavaScript');
+                }
+                resolve(false);
               }
             });
-            // Try silent (no popup) first
-            GD.tokenClient.requestAccessToken({ prompt: '' });
-            // If silent fails (no prior consent), resolve anyway — login button handles it
-            setTimeout(() => resolve(false), 3000);
+            // NOTE: no intentamos popup silencioso automático al cargar —
+            // muchos navegadores/bloqueadores cancelan esto y dejan el SDK en mal estado.
+            // El usuario debe hacer clic en "Conectar con Google" explícitamente.
+            resolve(false);
           });
         }
       }, 200);
+      // Timeout de seguridad si Google nunca carga (script bloqueado, sin internet, etc.)
+      setTimeout(() => {
+        clearInterval(waitGapi);
+        if (!window.gapi || !window.google) {
+          console.error('GD: Google API scripts no cargaron (revisa bloqueador de anuncios o conexión)');
+          resolve(false);
+        }
+      }, 8000);
     });
   },
 
   // ── Request token with user interaction (login button) ──────────────
   requestToken() {
-    if (!GD.tokenClient) { setTimeout(() => GD.requestToken(), 500); return; }
+    if (!GD.tokenClient) {
+      GD._showStatus('⏳ Cargando Google...', 'sync');
+      let tries = 0;
+      const wait = setInterval(() => {
+        tries++;
+        if (GD.tokenClient) {
+          clearInterval(wait);
+          GD.tokenClient.requestAccessToken({ prompt: 'consent' });
+        } else if (tries > 20) { // 10 segundos
+          clearInterval(wait);
+          alert('No se pudo cargar el sistema de Google Drive.\n\nPosibles causas:\n• Bloqueador de anuncios activo (desactívalo para este sitio)\n• Sin conexión a internet\n• El Client ID no está bien configurado\n\nAbre la consola del navegador (F12) y revisa si hay errores en rojo.');
+          GD._showStatus('⚠ No disponible', 'err');
+        }
+      }, 500);
+      return;
+    }
     GD.tokenClient.requestAccessToken({ prompt: 'consent' });
   },
 
