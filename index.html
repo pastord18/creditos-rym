@@ -640,8 +640,9 @@ const GD = {
     if (value === undefined) return;
     delete GD._pendingSaves[key];
     GD._showStatus('☁ Guardando...', 'sync');
-    const filename = GD._keyToFilename(key);
-    await GD.writeFile(filename, value);
+    // 'key' ya es el nombre de archivo completo (ej: "cc_1_clientes.json"),
+    // construido por saveCarteraKey/saveGlobal — no se vuelve a sanear aquí.
+    await GD.writeFile(key, value);
     GD._showStatus('✅ Guardado en Drive', 'ok');
     setTimeout(() => { const el=document.getElementById('gd-status'); if(el) el.style.display='none'; }, 2000);
   },
