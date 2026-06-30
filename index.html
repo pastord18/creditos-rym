@@ -396,11 +396,37 @@ const GD = {
   _pendingSaves: {}, // key -> value to save
   _syncing: false,
 
+  // ── Callbacks reutilizables del tokenClient (para init() y para el fallback) ──
+  _onTokenResponse: async (resp) => {
+    if (resp.error) {
+      console.error('GD token error', resp);
+      GD._showStatus('⚠ Error: ' + (resp.error_description || resp.error), 'err');
+      alert('Error al conectar con Google Drive:\n\n' + (resp.error_description || resp.error) +
+        '\n\nVerifica que esta URL esté agregada en "Orígenes autorizados de JavaScript" en Google Cloud Console:\n' + window.location.origin);
+      return;
+    }
+    GD.accessToken = resp.access_token;
+    if (window.gapi && gapi.client) gapi.client.setToken({ access_token: resp.access_token });
+    await GD._ensureDriveClientLoaded();
+    await GD._ensureFolder();
+    await GD._loadGlobalFile();
+    GD._showStatus('✅ Google Drive conectado', 'ok');
+    if (typeof _updateGDLoginBtn === 'function') _updateGDLoginBtn();
+  },
+  _onTokenErrorCallback: (err) => {
+    console.error('GD tokenClient error_callback', err);
+    GD._diagnostico = 'error_callback del tokenClient: ' + JSON.stringify(err);
+    GD._showStatus('⚠ Error de conexión', 'err');
+    if(err && err.type !== 'popup_closed') {
+      alert('No se pudo abrir la ventana de Google.\n\nVerifica que:\n1. Tu bloqueador de anuncios no esté bloqueando popups de accounts.google.com\n2. La URL "' + window.location.origin + '" esté agregada en Google Cloud Console → Credenciales → Orígenes autorizados de JavaScript');
+    }
+  },
+
   // ── Init: load GAPI then try silent token ────────────────────────────
   async init() {
     return new Promise((resolve) => {
       const waitGapi = setInterval(() => {
-        if (window.gapi && window.google && window.google.accounts) {
+        if (window.gapi && window.google && window.google.accounts && window.google.accounts.oauth2) {
           clearInterval(waitGapi);
 
           // 1) Inicializar tokenClient INMEDIATAMENTE — no depende del discovery doc de Drive,
@@ -409,36 +435,14 @@ const GD = {
             GD.tokenClient = google.accounts.oauth2.initTokenClient({
               client_id: GD.CLIENT_ID,
               scope: GD.SCOPES,
-              callback: async (resp) => {
-                if (resp.error) {
-                  console.error('GD token error', resp);
-                  GD._showStatus('⚠ Error: ' + (resp.error_description || resp.error), 'err');
-                  alert('Error al conectar con Google Drive:\n\n' + (resp.error_description || resp.error) +
-                    '\n\nVerifica que esta URL esté agregada en "Orígenes autorizados de JavaScript" en Google Cloud Console:\n' + window.location.origin);
-                  return;
-                }
-                GD.accessToken = resp.access_token;
-                if (window.gapi && gapi.client) gapi.client.setToken({ access_token: resp.access_token });
-                // Asegurar que el cliente Drive esté cargado antes de usarlo
-                await GD._ensureDriveClientLoaded();
-                await GD._ensureFolder();
-                await GD._loadGlobalFile();
-                GD._showStatus('✅ Google Drive conectado', 'ok');
-                if (typeof _updateGDLoginBtn === 'function') _updateGDLoginBtn();
-                resolve(true);
-              },
-              error_callback: (err) => {
-                console.error('GD tokenClient error_callback', err);
-                GD._diagnostico = 'error_callback del tokenClient: ' + JSON.stringify(err);
-                GD._showStatus('⚠ Error de conexión', 'err');
-                if(err && err.type !== 'popup_closed') {
-                  alert('No se pudo abrir la ventana de Google.\n\nVerifica que:\n1. Tu bloqueador de anuncios no esté bloqueando popups de accounts.google.com\n2. La URL "' + window.location.origin + '" esté agregada en Google Cloud Console → Credenciales → Orígenes autorizados de JavaScript');
-                }
-                resolve(false);
-              }
+              callback: async (resp) => { await GD._onTokenResponse(resp); resolve(!resp.error); },
+              error_callback: (err) => { GD._onTokenErrorCallback(err); resolve(false); }
             });
+            window._gdTokenClientCreated = true;
           } catch(e) {
             console.error('GD initTokenClient error', e);
+            window._gdTokenClientCreated = false;
+            window._gdTokenClientError = e.message || String(e);
             GD._diagnostico = 'Error creando tokenClient: ' + e.message;
           }
 
@@ -456,11 +460,12 @@ const GD = {
       // Timeout de seguridad si Google nunca carga (script bloqueado, sin internet, etc.)
       setTimeout(() => {
         clearInterval(waitGapi);
-        if (!window.gapi || !window.google) {
+        if (!window.gapi || !window.google || !(window.google.accounts && window.google.accounts.oauth2)) {
           let detalle = window._gdScriptError || 'Razón desconocida';
           let faltan = [];
           if (!window.gapi) faltan.push('apis.google.com/js/api.js (gapi)');
           if (!window.google || !window.google.accounts) faltan.push('accounts.google.com/gsi/client (google.accounts)');
+          if (window.google && window.google.accounts && !window.google.accounts.oauth2) faltan.push('google.accounts.oauth2 (submódulo OAuth2 nunca apareció)');
           console.error('GD: Google API scripts no cargaron.', { detalle, faltan });
           GD._diagnostico = 'Scripts que no cargaron: ' + faltan.join(', ') +
             (window._gdScriptError ? ('\n\nDetalle: ' + window._gdScriptError) : '') +
@@ -494,17 +499,36 @@ const GD = {
   },
 
   // ── Request token with user interaction (login button) ──────────────
+  _waitingForToken: null,
   requestToken() {
     if (!GD.tokenClient) {
+      // Evitar acumular múltiples intervalos si se hace clic varias veces
+      if (GD._waitingForToken) { clearInterval(GD._waitingForToken); }
       GD._showStatus('⏳ Cargando Google...', 'sync');
       let tries = 0;
-      const wait = setInterval(() => {
+      GD._waitingForToken = setInterval(() => {
         tries++;
+        if (window.google && window.google.accounts && window.google.accounts.oauth2 && !GD.tokenClient) {
+          // El SDK ya está listo pero por algún motivo init() no creó tokenClient — créalo aquí directamente
+          try {
+            GD.tokenClient = google.accounts.oauth2.initTokenClient({
+              client_id: GD.CLIENT_ID,
+              scope: GD.SCOPES,
+              callback: GD._onTokenResponse,
+              error_callback: GD._onTokenErrorCallback
+            });
+          } catch(e) {
+            console.error('GD requestToken fallback initTokenClient error', e);
+            GD._diagnostico = 'Error creando tokenClient (fallback): ' + e.message;
+          }
+        }
         if (GD.tokenClient) {
-          clearInterval(wait);
+          clearInterval(GD._waitingForToken);
+          GD._waitingForToken = null;
           GD.tokenClient.requestAccessToken({ prompt: 'consent' });
         } else if (tries > 20) { // 10 segundos
-          clearInterval(wait);
+          clearInterval(GD._waitingForToken);
+          GD._waitingForToken = null;
           alert('No se pudo cargar el sistema de Google Drive.\n\n' +
             (GD._diagnostico || 'Posibles causas:\n• Bloqueador de anuncios activo (desactívalo para este sitio)\n• Sin conexión a internet\n• El Client ID no está bien configurado') +
             '\n\nAbre la consola del navegador (F12) → pestaña "Console" (no "Issues") y revisa si hay errores en rojo.');
@@ -6449,6 +6473,7 @@ function gdDiagUpdate(){
   l.push('window.google: ' + (window.google?'✅ cargado':'❌ NO cargado'));
   l.push('window.google.accounts: ' + (window.google&&window.google.accounts?'✅ cargado':'❌ NO cargado'));
   l.push('GD.tokenClient: ' + (GD.tokenClient?'✅ inicializado':'❌ NO inicializado'));
+  if(window._gdTokenClientCreated===false) l.push('Error creando tokenClient: ' + (window._gdTokenClientError||'desconocido'));
   l.push('Cliente Drive (discovery doc): ' + (GD._driveClientLoaded?'✅ cargado':'❌ NO cargado'));
   l.push('Origen actual: ' + window.location.origin);
   if(window._gdScriptError) l.push('Error de script: ' + window._gdScriptError);
