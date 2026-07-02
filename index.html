@@ -434,6 +434,24 @@ const GD = {
     await GD._ensureDriveClientLoaded();
     await GD._ensureFolder();
     await GD._loadGlobalFile();
+    // Limpiar timer y banner de conexión manual si existían
+    if(GD._autoConnectTimer){ clearTimeout(GD._autoConnectTimer); GD._autoConnectTimer=null; }
+    const banner=document.getElementById('gd-connect-banner');
+    if(banner) banner.remove();
+
+    // Verificar que el correo autenticado coincide con el esperado para este usuario
+    // (Google no expone el email directamente en el token implícito, pero podemos
+    //  comparar vía userinfo si lo necesitamos — por ahora confiar en hint)
+    if(GD._usuarioEsperado){
+      // Guardar en localStorage que este usuario ya vinculó Drive en este dispositivo
+      const sesion=GLOBAL.sesion;
+      if(sesion){
+        const userObj=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
+        if(userObj) lsSet('gd_linked_user_'+userObj.id, {correo:GD._usuarioEsperado, fecha:new Date().toISOString()});
+      }
+      GD._usuarioEsperado=null;
+    }
+
     GD._showStatus('✅ Google Drive conectado', 'ok');
     if (typeof _updateGDLoginBtn === 'function') _updateGDLoginBtn();
     // Si estamos en la pantalla de login (incógnito / dispositivo nuevo) o en
@@ -1179,12 +1197,76 @@ function doLogin(){
     GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
     err.classList.add('hidden');
     document.getElementById('login-screen').style.display='none';
-    showCarteraScreen();
+    // Si el usuario tiene correo Google configurado, conectar Drive automáticamente
+    if(user.correoGoogle && !GD.isConnected()){
+      gdConectarParaUsuario(user);
+    } else {
+      showCarteraScreen();
+    }
   } else {
     err.textContent='⚠ Usuario o contraseña incorrectos.';
     err.classList.remove('hidden');
     document.getElementById('l-pass').value='';
   }
+}
+
+// Conecta Drive para un usuario específico, verificando que el correo Google sea el correcto
+function gdConectarParaUsuario(user){
+  if(!GD.tokenClient){
+    // SDK aún cargando — mostrar pantalla de carteras y dejar que el usuario conecte manualmente
+    showCarteraScreen();
+    gdPedirConexionManual(user);
+    return;
+  }
+  // Configurar hint_email para que Google preseleccione la cuenta correcta
+  GD._usuarioEsperado=user.correoGoogle;
+  GD.tokenClient.requestAccessToken({
+    prompt: '',  // Sin prompt = conexión silenciosa si ya autorizó antes
+    hint: user.correoGoogle,
+    login_hint: user.correoGoogle
+  });
+  // Si en 4 segundos no conectó (primer acceso o expiró), pedir manualmente
+  GD._autoConnectTimer=setTimeout(()=>{
+    if(!GD.isConnected()){
+      showCarteraScreen();
+      gdPedirConexionManual(user);
+    }
+  }, 4000);
+}
+
+function gdPedirConexionManual(user){
+  // Mostrar banner persistente invitando a conectar Drive
+  const carteraScreen=document.getElementById('cartera-screen');
+  if(!carteraScreen) return;
+  let banner=document.getElementById('gd-connect-banner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='gd-connect-banner';
+    banner.style.cssText='position:fixed;bottom:18px;right:18px;z-index:9999;background:#1A3260;color:#fff;border-radius:12px;padding:14px 18px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:12.5px;line-height:1.5';
+    carteraScreen.appendChild(banner);
+  }
+  banner.innerHTML=`
+    <div style="font-weight:700;margin-bottom:6px">☁ Conecta Google Drive</div>
+    <div style="color:rgba(255,255,255,0.8);margin-bottom:10px">
+      Para sincronizar tus datos, conecta tu cuenta:<br>
+      <strong style="color:#6FEAA0">${esc(user.correoGoogle)}</strong>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="gdConectarManual('${esc(user.correoGoogle)}')"
+        style="flex:1;padding:7px 10px;border-radius:7px;border:none;background:#4285F4;color:#fff;font-weight:700;cursor:pointer;font-size:12px">
+        Conectar Google
+      </button>
+      <button onclick="document.getElementById('gd-connect-banner').remove()"
+        style="padding:7px 10px;border-radius:7px;border:1px solid rgba(255,255,255,0.3);background:transparent;color:#fff;cursor:pointer;font-size:12px">
+        Ahora no
+      </button>
+    </div>`;
+}
+
+function gdConectarManual(correoHint){
+  if(!GD.tokenClient){alert('Google Drive no está disponible aún. Intenta en unos segundos.');return;}
+  GD._usuarioEsperado=correoHint;
+  GD.tokenClient.requestAccessToken({prompt:'consent', hint:correoHint, login_hint:correoHint});
 }
 document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pass').focus()});
@@ -7421,6 +7503,26 @@ function confirmarImportGlobal(){
 let editUsuarioId=null;
 let editCarteraId=null;
 
+function fuValidarCorreo(){
+  var val=document.getElementById('fu-correo-google').value.trim();
+  var hint=document.getElementById('fu-correo-hint');
+  if(!hint)return;
+  if(!val){
+    hint.style.color='var(--muted)';
+    hint.textContent='Opcional. Al conectar Drive, la app verificara que el usuario use este correo exacto.';
+  } else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){
+    hint.style.color='var(--err)';
+    hint.textContent='Formato de correo invalido.';
+  } else {
+    hint.style.color='#1A7A4A';
+    hint.textContent='Correo valido. Este usuario debera autenticarse con esta cuenta de Google.';
+  }
+}
+function gdEstadoUsuario(u){
+  var gdUser=lsGet('gd_linked_user_'+u.id, null);
+  if(!gdUser) return '<span style="font-size:11px;color:var(--muted)">—</span>';
+  return '<span style="font-size:11px;color:#1A7A4A;font-weight:700">Vinculado</span>';
+}
 function renderUsuarios(){
   const sesion=GLOBAL.sesion;
   if((sesion&&sesion.rol)!=='admin'){
@@ -7458,10 +7560,15 @@ function renderUsuarios(){
   const usrRows=usuarios.map(u=>{
     const esAdminP=u.usuario===ADMIN.usuario;
     const misCarteras=carteras.filter(c=>(cu[c.id]||[]).includes(u.usuario));
+    const correoGoogleMostrar=u.correoGoogle||'—';
     return`<tr>
       <td><strong>${esc(u.usuario)}</strong>${esAdminP?' '+badge('Principal','mora'):''}</td>
       <td style="font-family:monospace">${esc(u.clave)}</td>
       <td>${u.rol==='admin'?badge('Administrador','mora'):badge('Usuario','gray')}</td>
+      <td style="font-size:11.5px;color:${u.correoGoogle?'var(--navy)':'var(--muted)'}">
+        ${u.correoGoogle?'<svg width="12" height="12" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:3px"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>':''}${esc(correoGoogleMostrar)}
+      </td>
+      <td>${gdEstadoUsuario(u)}</td>
       <td>${misCarteras.length>0?misCarteras.map(c=>`<span class="badge badge-blue" style="margin:2px">${esc(c.nombre)}</span>`).join(''):
         '<span style="color:var(--muted);font-size:11px">Sin carteras</span>'}</td>
       <td><div class="row-actions">
@@ -7595,14 +7702,35 @@ function renderUsuarios(){
               <option value="admin">Administrador</option>
             </select></div>
         </div>
+        <div style="margin-top:12px">
+          <div class="field" style="max-width:360px">
+            <label>
+              Correo Google (Gmail) 
+              <span style="font-size:10px;font-weight:400;color:var(--muted)">— para sincronización automática con Drive</span>
+            </label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              <input id="fu-correo-google" type="email" placeholder="cobrador@gmail.com"
+                style="flex:1" oninput="fuValidarCorreo()"/>
+            </div>
+            <div id="fu-correo-hint" style="font-size:10.5px;color:var(--muted);margin-top:3px">
+              Opcional. Al conectar Drive, la app verificará que el usuario use este correo exacto.
+            </div>
+          </div>
+        </div>
         <div style="margin-top:14px;display:flex;gap:9px">
           <button class="btn btn-primary" onclick="saveUsuario()">💾 Guardar</button>
           <button class="btn btn-secondary" onclick="toggleFormUsuario(true)">Cancelar</button>
         </div>
       </div>
       <div class="tbl-wrap"><table>
-        <thead><tr><th>Usuario</th><th>Contraseña</th><th>Rol</th><th>Carteras asignadas</th><th>Acciones</th></tr></thead>
-        <tbody>${usrRows||'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Sin usuarios</td></tr>'}</tbody>
+        <thead><tr><th>Usuario</th><th>Contraseña</th><th>Rol</th><th>Correo Google</th><th>Drive</th><th>Carteras asignadas</th><th>Acciones</th></tr></thead>
+        <tbody>${usrRows||'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Sin usuarios</td></tr>'}</tbody>
       </table></div>
     </div>
     <div class="info-box info-box-note" style="margin-top:18px;font-size:12px">
@@ -7739,6 +7867,9 @@ function toggleFormUsuario(hide){
     document.getElementById('fu-usuario').value='';
     document.getElementById('fu-clave').value='';
     document.getElementById('fu-rol').value='usuario';
+    document.getElementById('fu-correo-google').value='';
+    const fuh=document.getElementById('fu-correo-hint');
+    if(fuh) fuh.textContent='Opcional. Al conectar Drive, la app verificará que el usuario use este correo exacto.';
     editUsuarioId=null;
   }
 }
@@ -7749,6 +7880,8 @@ function editUsuario(id){
   document.getElementById('fu-usuario').value=u.usuario||'';
   document.getElementById('fu-clave').value=u.clave||'';
   document.getElementById('fu-rol').value=u.rol||'usuario';
+  document.getElementById('fu-correo-google').value=u.correoGoogle||'';
+  fuValidarCorreo();
 }
 function saveUsuario(){
   const sesion=GLOBAL.sesion;
@@ -7765,13 +7898,15 @@ function saveUsuario(){
       return alert(`El usuario principal "${ADMIN.usuario}" no puede cambiar de nombre.`);
     if((target&&target.usuario)===ADMIN.usuario&&rol!=='admin')
       return alert(`El usuario principal "${ADMIN.usuario}" debe mantener el rol Administrador.`);
-    GLOBAL.usuarios=todos.map(u=>u.id===editUsuarioId?{...u,usuario,clave,rol}:u);
+    const correoGoogle=document.getElementById('fu-correo-google').value.trim().toLowerCase();
+    GLOBAL.usuarios=todos.map(u=>u.id===editUsuarioId?{...u,usuario,clave,rol,correoGoogle}:u);
     if((sesion&&sesion.usuario)===(target&&target.usuario)){
       GLOBAL.sesion={...GLOBAL.sesion,usuario,rol};
     }
   } else {
     const nextId=GLOBAL.nextIdUsuario;
-    GLOBAL.usuarios=[...todos,{id:nextId,usuario,clave,rol}];
+    const correoGoogleNuevo=document.getElementById('fu-correo-google').value.trim().toLowerCase();
+    GLOBAL.usuarios=[...todos,{id:nextId,usuario,clave,rol,correoGoogle:correoGoogleNuevo}];
     GLOBAL.nextIdUsuario=nextId+1;
   }
   toggleFormUsuario(true);
