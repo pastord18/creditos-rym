@@ -478,58 +478,58 @@ const GD = {
     }
   },
 
-  // ── Init: load GAPI then try silent token ────────────────────────────
-  async init() {
-    return new Promise((resolve) => {
-      const waitGapi = setInterval(() => {
-        if (window.gapi && window.google && window.google.accounts && window.google.accounts.oauth2) {
-          clearInterval(waitGapi);
-
-          // 1) Inicializar tokenClient INMEDIATAMENTE — no depende del discovery doc de Drive,
-          //    así el botón "Conectar con Google" funciona aunque falle la carga de la API de Drive.
-          try {
-            GD.tokenClient = google.accounts.oauth2.initTokenClient({
-              client_id: GD.CLIENT_ID,
-              scope: GD.SCOPES,
-              callback: async (resp) => { await GD._onTokenResponse(resp); resolve(!resp.error); },
-              error_callback: (err) => { GD._onTokenErrorCallback(err); resolve(false); }
-            });
-            window._gdTokenClientCreated = true;
-          } catch(e) {
-            console.error('GD initTokenClient error', e);
-            window._gdTokenClientCreated = false;
-            window._gdTokenClientError = e.message || String(e);
-            GD._diagnostico = 'Error creando tokenClient: ' + e.message;
-          }
-
-          // 2) Cargar el cliente gapi.client por separado (para llamadas a la Drive API).
-          //    Si esto falla, el login con Google igual funciona; solo fallarán las
-          //    operaciones de lectura/escritura en Drive hasta que se resuelva.
-          GD._ensureDriveClientLoaded().catch(e=>{
-            console.error('GD: fallo cargando cliente Drive (discovery doc)', e);
-            GD._diagnostico = 'No se pudo cargar la API de Drive (discovery doc). Esto puede deberse a un bloqueador de anuncios o de cookies de terceros bloqueando www.googleapis.com.\nDetalle: ' + (e&&e.message?e.message:JSON.stringify(e));
-          });
-
-          resolve(false); // resolución temprana: el login está listo aunque el discovery doc tarde
-        }
-      }, 200);
-      // Timeout de seguridad si Google nunca carga (script bloqueado, sin internet, etc.)
-      setTimeout(() => {
+  // ── Init background: inicializa Drive sin bloquear la UI ─────────────
+  // Nunca hace intentos silenciosos de OAuth (causan COOP en GitHub Pages).
+  // Solo prepara el tokenClient y el cliente de Drive.
+  // La conexión real siempre requiere clic explícito del usuario.
+  _initBackground() {
+    // Esperar a que los scripts de Google carguen
+    const waitGapi = setInterval(() => {
+      if (window.gapi && window.google && window.google.accounts && window.google.accounts.oauth2) {
         clearInterval(waitGapi);
-        if (!window.gapi || !window.google || !(window.google.accounts && window.google.accounts.oauth2)) {
-          let detalle = window._gdScriptError || 'Razón desconocida';
-          let faltan = [];
-          if (!window.gapi) faltan.push('apis.google.com/js/api.js (gapi)');
-          if (!window.google || !window.google.accounts) faltan.push('accounts.google.com/gsi/client (google.accounts)');
-          if (window.google && window.google.accounts && !window.google.accounts.oauth2) faltan.push('google.accounts.oauth2 (submódulo OAuth2 nunca apareció)');
-          console.error('GD: Google API scripts no cargaron.', { detalle, faltan });
-          GD._diagnostico = 'Scripts que no cargaron: ' + faltan.join(', ') +
-            (window._gdScriptError ? ('\n\nDetalle: ' + window._gdScriptError) : '') +
-            '\n\nEsto casi siempre significa que un bloqueador de anuncios/privacidad está bloqueando los dominios de Google (accounts.google.com y/o apis.google.com). Revisa la configuración de tu bloqueador (uBlock, AdBlock, Brave Shields, etc.) y permite esos dominios para este sitio.';
-          resolve(false);
-        }
-      }, 8000);
-    });
+        GD._setupTokenClient();
+        // Cargar cliente Drive en paralelo (no bloqueante)
+        GD._ensureDriveClientLoaded().catch(e => {
+          console.warn('GD: cliente Drive no disponible aún:', e && e.message);
+        });
+        // Actualizar UI del panel de Drive en login
+        const loginGdStatus = document.getElementById('login-gd-status');
+        const loginGdBtn = document.getElementById('login-gd-btn');
+        if (loginGdStatus) { loginGdStatus.textContent = '⚪ No conectado'; loginGdStatus.style.color = '#8A9AB8'; }
+        if (loginGdBtn) loginGdBtn.style.display = 'flex';
+        _updateGDLoginBtn();
+      }
+    }, 200);
+    // Si en 8 segundos los scripts no cargaron, marcar como no disponible
+    setTimeout(() => {
+      clearInterval(waitGapi);
+      if (!GD.tokenClient) {
+        const loginGdStatus = document.getElementById('login-gd-status');
+        if (loginGdStatus) { loginGdStatus.textContent = '⚠ No disponible'; loginGdStatus.style.color = '#C0392B'; }
+        GD._diagnostico = 'Los scripts de Google no cargaron en 8 segundos. Verifica tu conexión o bloqueador de anuncios.';
+        console.warn('GD: scripts no cargaron a tiempo');
+      }
+    }, 8000);
+  },
+
+  _setupTokenClient() {
+    try {
+      GD.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GD.CLIENT_ID,
+        scope: GD.SCOPES,
+        callback: async (resp) => { await GD._onTokenResponse(resp); },
+        error_callback: (err) => { GD._onTokenErrorCallback(err); }
+      });
+    } catch(e) {
+      console.error('GD: error creando tokenClient:', e);
+      GD._diagnostico = 'Error creando tokenClient: ' + e.message;
+    }
+  },
+
+  // ── Init (legacy, no se usa en el arranque pero se mantiene para compatibilidad) ──
+  async init() {
+    // Ya no bloquea — simplemente devuelve si está conectado o no
+    return Promise.resolve(GD.isConnected());
   },
 
   // ── Carga gapi.client + discovery doc de Drive (idempotente) ─────────
@@ -557,38 +557,28 @@ const GD = {
   // ── Request token with user interaction (login button) ──────────────
   _waitingForToken: null,
   requestToken() {
+    // Si tokenClient no está listo aún, intentar crearlo primero
+    if (!GD.tokenClient && window.google && window.google.accounts && window.google.accounts.oauth2) {
+      GD._setupTokenClient();
+    }
     if (!GD.tokenClient) {
-      // Evitar acumular múltiples intervalos si se hace clic varias veces
-      if (GD._waitingForToken) { clearInterval(GD._waitingForToken); }
+      if (GD._waitingForToken) clearInterval(GD._waitingForToken);
       GD._showStatus('⏳ Cargando Google...', 'sync');
       let tries = 0;
       GD._waitingForToken = setInterval(() => {
         tries++;
-        if (window.google && window.google.accounts && window.google.accounts.oauth2 && !GD.tokenClient) {
-          // El SDK ya está listo pero por algún motivo init() no creó tokenClient — créalo aquí directamente
-          try {
-            GD.tokenClient = google.accounts.oauth2.initTokenClient({
-              client_id: GD.CLIENT_ID,
-              scope: GD.SCOPES,
-              callback: GD._onTokenResponse,
-              error_callback: GD._onTokenErrorCallback
-            });
-          } catch(e) {
-            console.error('GD requestToken fallback initTokenClient error', e);
-            GD._diagnostico = 'Error creando tokenClient (fallback): ' + e.message;
-          }
+        if (!GD.tokenClient && window.google && window.google.accounts && window.google.accounts.oauth2) {
+          GD._setupTokenClient();
         }
         if (GD.tokenClient) {
           clearInterval(GD._waitingForToken);
           GD._waitingForToken = null;
           GD.tokenClient.requestAccessToken({ prompt: 'consent' });
-        } else if (tries > 20) { // 10 segundos
+        } else if (tries > 20) {
           clearInterval(GD._waitingForToken);
           GD._waitingForToken = null;
-          alert('No se pudo cargar el sistema de Google Drive.\n\n' +
-            (GD._diagnostico || 'Posibles causas:\n• Bloqueador de anuncios activo (desactívalo para este sitio)\n• Sin conexión a internet\n• El Client ID no está bien configurado') +
-            '\n\nAbre la consola del navegador (F12) → pestaña "Console" (no "Issues") y revisa si hay errores en rojo.');
           GD._showStatus('⚠ No disponible', 'err');
+          alert('No se pudo conectar con Google Drive.\n\nPosibles causas:\n• Bloqueador de anuncios bloqueando accounts.google.com\n• Sin conexión a internet\n\nRecarga la página e intenta de nuevo.');
         }
       }, 500);
       return;
@@ -1212,26 +1202,15 @@ function doLogin(){
 
 // Conecta Drive para un usuario específico, verificando que el correo Google sea el correcto
 function gdConectarParaUsuario(user){
-  if(!GD.tokenClient){
-    // SDK aún cargando — mostrar pantalla de carteras y dejar que el usuario conecte manualmente
-    showCarteraScreen();
-    gdPedirConexionManual(user);
-    return;
+  // IMPORTANTE: No intentamos conexión silenciosa (prompt:'') porque GitHub Pages
+  // tiene COOP (Cross-Origin-Opener-Policy) que bloquea popups silenciosos de OAuth
+  // y deja la app colgada. En su lugar mostramos la pantalla normal y pedimos conexión.
+  showCarteraScreen();
+  // Solo pedir si Drive no está conectado y el usuario tiene correo configurado
+  if(!GD.isConnected() && user.correoGoogle){
+    // Pequeño delay para que la UI cargue primero
+    setTimeout(()=>gdPedirConexionManual(user), 800);
   }
-  // Configurar hint_email para que Google preseleccione la cuenta correcta
-  GD._usuarioEsperado=user.correoGoogle;
-  GD.tokenClient.requestAccessToken({
-    prompt: '',  // Sin prompt = conexión silenciosa si ya autorizó antes
-    hint: user.correoGoogle,
-    login_hint: user.correoGoogle
-  });
-  // Si en 4 segundos no conectó (primer acceso o expiró), pedir manualmente
-  GD._autoConnectTimer=setTimeout(()=>{
-    if(!GD.isConnected()){
-      showCarteraScreen();
-      gdPedirConexionManual(user);
-    }
-  }, 4000);
 }
 
 function gdPedirConexionManual(user){
@@ -7959,37 +7938,13 @@ function eliminarUsuario(id){
     }
   }
 
-  // Iniciar conexión a Google Drive ANTES de mostrar login/cartera —
-  // así si ya autorizaste antes en este navegador, los datos (usuarios, carteras)
-  // se sincronizan desde Drive antes de decidir qué pantalla mostrar.
-  // Esto es clave para que, en un navegador/dispositivo nuevo (incógnito, otro PC),
-  // tras conectar Drive aparezcan las mismas carteras y datos que en el original.
-  const loginGdStatus=document.getElementById('login-gd-status');
-  const loginGdBtn=document.getElementById('login-gd-btn');
-  const loginGdDesc=document.getElementById('login-gd-desc');
-  if(loginGdStatus) loginGdStatus.textContent='⏳ Verificando...';
+  // Mostrar la app inmediatamente — nunca bloquear el login esperando a Google Drive.
+  // Drive se inicializa EN PARALELO de forma no bloqueante.
+  // Esto evita pantallas en blanco por COOP, timeouts, o bloqueos de red.
+  continueInit();
 
-  GD.init().then(connected => {
-    _updateGDLoginBtn();
-    const statusEl=document.getElementById('gd-status');
-    const loginBtnEl=document.getElementById('gd-login-btn');
-    if(connected){
-      if(statusEl) statusEl.style.display='inline-block';
-      if(loginBtnEl) loginBtnEl.style.display='none';
-      if(loginGdStatus){loginGdStatus.textContent='✅ Conectado';loginGdStatus.style.color='#1A7A4A';}
-      if(loginGdBtn) loginGdBtn.style.display='none';
-      if(loginGdDesc) loginGdDesc.textContent='Tus datos están sincronizados con Google Drive.';
-    } else {
-      if(loginBtnEl) loginBtnEl.style.display='inline-flex';
-      if(loginGdStatus){loginGdStatus.textContent='⚪ No conectado';loginGdStatus.style.color='#8A9AB8';}
-      if(loginGdBtn) loginGdBtn.style.display='flex';
-    }
-    continueInit();
-  }).catch(()=>{
-    if(loginGdStatus){loginGdStatus.textContent='⚠ Error';loginGdStatus.style.color='#C0392B';}
-    if(loginGdBtn) loginGdBtn.style.display='flex';
-    continueInit();
-  });
+  // Inicializar Drive en segundo plano, sin bloquear la UI
+  GD._initBackground();
 })();
 </script>
 </body>
