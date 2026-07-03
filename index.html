@@ -1598,8 +1598,8 @@ function computeDashboardStats(desde, hasta){
   });
   const totalCartera=capitalCartera+interesesCartera;
   const totalRecaudo=recaudoCapital+recaudoInteresesMora;
-  const saldoCapital=Math.max(0,capitalCartera-recaudoCapital);
-  const saldoIntereses=Math.max(0,(interesesCartera+totalMora)-recaudoInteresesMora);
+  const saldoCapital=capitalCartera-recaudoCapital; // puede ser negativo si se prestó más que el capital
+  const saldoIntereses=(interesesCartera+totalMora)-recaudoInteresesMora;
   const totalSaldo=saldoCapital+saldoIntereses;
   return {capitalCartera,interesesCartera,totalCartera,recaudoCapital,recaudoInteresesMora,totalRecaudo,
     saldoCapital,saldoIntereses,totalSaldo,activosCount:creditosFiltrados.length,creditosEnMora,cuotasVencidas,totalMora};
@@ -1615,9 +1615,9 @@ function applyDashboardFiltro(){
   kpiWrap.innerHTML=`
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">💼 Cartera Total (proyectada)</div>
     <div class="grid3" style="margin-bottom:22px">
-      ${statCard('💰','Total Capital Cartera',fmt(s.capitalCartera),'#1A3260')}
-      ${statCard('📈','Total Intereses Cartera',fmt(s.interesesCartera),'#C9A84C')}
-      ${statCard('🏦','Total Cartera (Capital + Interés)',fmt(s.totalCartera),'#0F2044')}
+      ${statCard('💰','Capital Total Prestado',fmt(s.capitalCartera),'#1A3260','Capital original de todos los créditos activos')}
+      ${statCard('📈','Intereses Proyectados',fmt(s.interesesCartera),'#C9A84C','Total de intereses si todos los créditos se pagan completos')}
+      ${statCard('🏦','Cartera Total Proyectada',fmt(s.totalCartera),'#0F2044','Capital + Intereses proyectados')}
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Recaudo Acumulado</div>
     <div class="grid3" style="margin-bottom:22px">
@@ -1627,9 +1627,9 @@ function applyDashboardFiltro(){
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📉 Saldo Pendiente por Cobrar</div>
     <div class="grid3" style="margin-bottom:22px">
-      ${statCard('📊','Saldo Capital por Cobrar',fmt(s.saldoCapital),'#7B2D8B')}
-      ${statCard('📊','Saldo Intereses por Cobrar',fmt(s.saldoIntereses),'#7B2D8B')}
-      ${statCard('📊','Total Saldo por Cobrar',fmt(s.totalSaldo),'#7B2D8B')}
+      ${statCard('📊','Capital Pendiente',fmt(s.saldoCapital),s.saldoCapital<0?'#C0392B':'#7B2D8B',s.saldoCapital<0?'Negativo: se prestó más del capital original':'Capital que falta por recuperar')}
+      ${statCard('📊','Intereses + Mora Pendientes',fmt(s.saldoIntereses),'#7B2D8B','Intereses y mora que faltan por cobrar')}
+      ${statCard('📊','Total Pendiente por Cobrar',fmt(s.totalSaldo),'#7B2D8B','Capital + Intereses + Mora pendientes')}
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚠️ Estado de Cartera</div>
     <div class="grid4" style="margin-bottom:24px">
@@ -1680,9 +1680,9 @@ function renderDashboard(){
     <div id="dash-kpis">
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">💼 Cartera Total (proyectada)</div>
     <div class="grid3" style="margin-bottom:22px">
-      ${statCard('💰','Total Capital Cartera',fmt(s.capitalCartera),'#1A3260')}
-      ${statCard('📈','Total Intereses Cartera',fmt(s.interesesCartera),'#C9A84C')}
-      ${statCard('🏦','Total Cartera (Capital + Interés)',fmt(s.totalCartera),'#0F2044')}
+      ${statCard('💰','Capital Total Prestado',fmt(s.capitalCartera),'#1A3260','Capital original de todos los créditos activos')}
+      ${statCard('📈','Intereses Proyectados',fmt(s.interesesCartera),'#C9A84C','Total de intereses si todos los créditos se pagan completos')}
+      ${statCard('🏦','Cartera Total Proyectada',fmt(s.totalCartera),'#0F2044','Capital + Intereses proyectados')}
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Recaudo Acumulado</div>
     <div class="grid3" style="margin-bottom:22px">
@@ -1692,9 +1692,9 @@ function renderDashboard(){
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📉 Saldo Pendiente por Cobrar</div>
     <div class="grid3" style="margin-bottom:22px">
-      ${statCard('📊','Saldo Capital por Cobrar',fmt(s.saldoCapital),'#7B2D8B')}
-      ${statCard('📊','Saldo Intereses por Cobrar',fmt(s.saldoIntereses),'#7B2D8B')}
-      ${statCard('📊','Total Saldo por Cobrar',fmt(s.totalSaldo),'#7B2D8B')}
+      ${statCard('📊','Capital Pendiente',fmt(s.saldoCapital),s.saldoCapital<0?'#C0392B':'#7B2D8B',s.saldoCapital<0?'Negativo: se prestó más del capital original':'Capital que falta por recuperar')}
+      ${statCard('📊','Intereses + Mora Pendientes',fmt(s.saldoIntereses),'#7B2D8B','Intereses y mora que faltan por cobrar')}
+      ${statCard('📊','Total Pendiente por Cobrar',fmt(s.totalSaldo),'#7B2D8B','Capital + Intereses + Mora pendientes')}
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⚠️ Estado de Cartera</div>
     <div class="grid4" style="margin-bottom:24px">
@@ -1714,11 +1714,13 @@ function renderDashboard(){
         <tbody>${pagoRows||'<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--muted)">Sin pagos</td></tr>'}</tbody></table></div></div>
     </div>`;
 }
-function statCard(icon,label,value,accent){
+function statCard(icon,label,value,accent,subtitle){
   return`<div class="stat-card" style="border-left-color:${accent}">
     <div class="stat-icon">${icon}</div>
     <div class="stat-value">${esc(String(value))}</div>
-    <div class="stat-label">${esc(label)}</div></div>`;
+    <div class="stat-label">${esc(label)}</div>
+    ${subtitle?`<div style="font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3">${esc(subtitle)}</div>`:''}
+    </div>`;
 }
 
 // ══════════════════════════════════════════════════════
