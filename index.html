@@ -280,7 +280,14 @@ tr:hover td{background:#FAFBFF}
         <div style="font-weight:600">No tienes acceso a ninguna cartera aún.</div>
         <div style="font-size:12px;margin-top:6px">Contacta al administrador para que te asigne acceso.</div>
       </div>
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #D0DAF0;display:flex;justify-content:space-between;align-items:center">
+      <div id="cartera-sync-row" style="margin-top:14px;text-align:center">
+        <button id="cartera-sync-btn" onclick="GD.isConnected()?GD.fullSyncAll():GD.requestToken()"
+          style="padding:7px 14px;border-radius:20px;border:1.5px solid #C9A84C;background:#FFFDF5;
+          color:#A6831A;font-size:11.5px;font-weight:700;cursor:pointer">
+          🔄 Sincronizar todo a Drive
+        </button>
+      </div>
+      <div style="margin-top:14px;padding-top:16px;border-top:1px solid #D0DAF0;display:flex;justify-content:space-between;align-items:center">
         <button class="btn btn-secondary" onclick="doLogout()" style="font-size:12px">← Cerrar sesión</button>
         <div id="cartera-admin-link" class="hidden">
           <button class="btn btn-primary" onclick="entrarAdmin()" style="font-size:12px">⚙️ Gestionar Carteras</button>
@@ -303,8 +310,8 @@ tr:hover td{background:#FAFBFF}
       <!-- Google Drive status badge -->
       <span id="gd-status" style="display:none;font-size:11px;font-weight:700;color:#fff;
         padding:3px 10px;border-radius:20px;background:#1A7A4A;cursor:pointer;white-space:nowrap"
-        onclick="GD.isConnected()?GD.fullSync(CARTERA_ID):GD.requestToken()"
-        title="Clic para sincronizar manualmente con Drive">☁ Drive</span>
+        onclick="GD.isConnected()?GD.fullSyncAll():GD.requestToken()"
+        title="Clic para sincronizar manualmente con Drive (todas las carteras)">☁ Drive</span>
       <button id="gd-login-btn" onclick="GD.requestToken()"
         style="display:none;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;
         border:1.5px solid #4285F4;background:#fff;color:#4285F4;font-size:11px;font-weight:700;cursor:pointer">
@@ -474,6 +481,11 @@ const GD = {
 
     GD._showStatus('✅ Google Drive conectado', 'ok');
     if (typeof _updateGDLoginBtn === 'function') _updateGDLoginBtn();
+    // Empujar a Drive cualquier dato local que aún no se haya sincronizado
+    // (ediciones hechas antes de conectar, o con la conexión caída) y arrancar
+    // la sincronización periódica en segundo plano.
+    GD.fullSyncAll(true);
+    GD.startAutoSync();
     // Si estamos en la pantalla de login (incógnito / dispositivo nuevo) o en
     // selección de cartera, refrescar el panel y volver a mostrar carteras
     // ya sincronizadas desde Drive.
@@ -721,15 +733,30 @@ const GD = {
   },
 
   // ── Load the global config file (usuarios, carteras) ────────────────
+  // Hace MERGE (no sobrescribe) para no perder usuarios/carteras que existan
+  // solo en este dispositivo y todavía no se hayan subido a Drive.
   async _loadGlobalFile() {
     const globalData = await GD.readFile('cc_global.json');
     if (globalData) {
-      // Merge into localStorage so existing code works unchanged
-      if (globalData.usuarios)   lsSet('cc_usuarios',       globalData.usuarios);
-      if (globalData.carteras)   lsSet('cc_carteras',       globalData.carteras);
-      if (globalData.carterasUsuarios) lsSet('cc_carteras_usuarios', globalData.carterasUsuarios);
-      if (globalData.nextIdCartera)    lsSet('cc_next_cartera',      globalData.nextIdCartera);
-      if (globalData.nextIdUsuario)    lsSet('cc_next_usuario',      globalData.nextIdUsuario);
+      const mergeById = (localArr, remoteArr) => {
+        const map = {};
+        (remoteArr || []).forEach(x => { if (x && x.id != null) map[x.id] = x; });
+        // Conservar entradas que solo existen localmente (aún no sincronizadas)
+        (localArr || []).forEach(x => { if (x && x.id != null && !(x.id in map)) map[x.id] = x; });
+        return Object.values(map);
+      };
+      const localUsuarios = lsGet('cc_usuarios', []);
+      const localCarteras = lsGet('cc_carteras', []);
+      const mergedUsuarios = mergeById(localUsuarios, globalData.usuarios);
+      const mergedCarteras = mergeById(localCarteras, globalData.carteras);
+      lsSet('cc_usuarios', mergedUsuarios.length ? mergedUsuarios : (globalData.usuarios || localUsuarios));
+      lsSet('cc_carteras', mergedCarteras.length ? mergedCarteras : (globalData.carteras || localCarteras));
+      if (globalData.carterasUsuarios) {
+        const localCU = lsGet('cc_carteras_usuarios', {});
+        lsSet('cc_carteras_usuarios', Object.assign({}, localCU, globalData.carterasUsuarios));
+      }
+      if (globalData.nextIdCartera) lsSet('cc_next_cartera', Math.max(globalData.nextIdCartera, lsGet('cc_next_cartera', 1)));
+      if (globalData.nextIdUsuario) lsSet('cc_next_usuario', Math.max(globalData.nextIdUsuario, lsGet('cc_next_usuario', 2)));
     }
   },
 
@@ -784,6 +811,49 @@ const GD = {
     await GD.saveGlobal();
     GD._showStatus('✅ Sincronización completa', 'ok');
     setTimeout(() => { const el=document.getElementById('gd-status'); if(el) el.style.display='none'; }, 2500);
+  },
+
+  // ── Full sync de TODAS las carteras (no solo la activa) + datos globales ──
+  // silent=true: no muestra alertas ni cambia el badge de estado (uso en segundo plano)
+  async fullSyncAll(silent) {
+    if (!GD.accessToken) return;
+    if (GD._syncingAll) return; // evita sincronizaciones duplicadas simultáneas
+    GD._syncingAll = true;
+    try {
+      if (!silent) GD._showStatus('☁ Sincronizando todo...', 'sync');
+      const carteras = GLOBAL.carteras || [];
+      const keys = ['clientes', 'creditos', 'pagos', 'gastos', 'aportes', 'nextIds'];
+      for (const c of carteras) {
+        if (!c || !c.id) continue;
+        for (const k of keys) {
+          const data = lsGet(`cc_${c.id}_${k}`, k === 'nextIds' ? {} : []);
+          await GD.writeFile(`cc_${c.id}_${k}.json`, data);
+        }
+      }
+      await GD.saveGlobal();
+      GD._lastFullSync = new Date().toISOString();
+      if (!silent) {
+        GD._showStatus('✅ Todo sincronizado', 'ok');
+        setTimeout(() => { const el = document.getElementById('gd-status'); if (el) el.style.display = 'none'; }, 2500);
+      }
+    } catch (e) {
+      console.error('GD.fullSyncAll error', e);
+      if (!silent) GD._showStatus('⚠ Error al sincronizar', 'err');
+    } finally {
+      GD._syncingAll = false;
+    }
+  },
+
+  // ── Sincronización periódica en segundo plano mientras Drive esté conectado ──
+  _autoSyncInterval: null,
+  startAutoSync() {
+    if (GD._autoSyncInterval) return; // ya está corriendo
+    GD._autoSyncInterval = setInterval(() => {
+      if (GD.isConnected()) GD.fullSyncAll(true);
+    }, 3 * 60 * 1000); // cada 3 minutos
+  },
+  stopAutoSync() {
+    if (GD._autoSyncInterval) { clearInterval(GD._autoSyncInterval); GD._autoSyncInterval = null; }
   },
 
   isConnected() { return !!GD.accessToken; }
