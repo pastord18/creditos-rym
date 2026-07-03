@@ -196,7 +196,18 @@ tr:hover td{background:#FAFBFF}
         <datalist id="l-user-list"></datalist>
       </div>
       <div class="field"><label>Contraseña</label>
-        <input id="l-pass" type="password" placeholder="••••••" autocomplete="current-password"/>
+        <div style="position:relative;display:flex;align-items:center">
+          <input id="l-pass" type="password" placeholder="••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')doLogin()"
+            style="width:100%;padding-right:42px"/>
+          <button type="button" onclick="togglePassVer('l-pass','l-pass-eye')"
+            id="l-pass-eye-btn"
+            style="position:absolute;right:10px;background:none;border:none;cursor:pointer;
+                   color:var(--muted);padding:4px;display:flex;align-items:center;font-size:16px"
+            title="Ver/ocultar contraseña">
+            <span id="l-pass-eye">👁</span>
+          </button>
+        </div>
       </div>
       <button class="btn btn-primary btn-full" onclick="doLogin()">Iniciar Sesión</button>
     </div>
@@ -347,10 +358,18 @@ tr:hover td{background:#FAFBFF}
     <div class="modal-title">Confirmación de Administrador</div>
     <div class="modal-desc" id="modal-desc"></div>
     <div class="field"><label>Clave de administrador</label>
-      <input id="modal-pass" type="password" placeholder="••••"
-        style="font-size:18px;letter-spacing:6px;text-align:center"
-        oninput="document.getElementById('modal-err').textContent=''"
-        onkeydown="if(event.key==='Enter')confirmAdmin()"/>
+      <div style="position:relative;display:flex;align-items:center">
+        <input id="modal-pass" type="password" placeholder="••••"
+          style="font-size:18px;letter-spacing:6px;text-align:center;width:100%;padding-right:42px"
+          oninput="document.getElementById('modal-err').textContent=''"
+          onkeydown="if(event.key==='Enter')confirmAdmin()"/>
+        <button type="button" onclick="togglePassVer('modal-pass','modal-pass-eye')"
+          style="position:absolute;right:10px;background:none;border:none;cursor:pointer;
+                 color:var(--muted);padding:4px;display:flex;align-items:center;font-size:16px"
+          title="Ver/ocultar contraseña">
+          <span id="modal-pass-eye">👁</span>
+        </button>
+      </div>
     </div>
     <div id="modal-err" class="modal-error"></div>
     <div class="grid2" style="margin-top:16px;gap:10px">
@@ -385,10 +404,11 @@ tr:hover td{background:#FAFBFF}
 // ══════════════════════════════════════════════════════
 // CONSTANTES
 // ══════════════════════════════════════════════════════
-const ADMIN = { usuario:'Administrador', clave:'1234' };
+const ADMIN = { usuario:'dmercado', clave:'0000' }; // usuario principal por defecto
 
 const SEED_USUARIOS = [
-  {id:1,usuario:'Administrador',clave:'1234',rol:'admin'},
+  {id:1,usuario:'dmercado',clave:'0000',rol:'admin',correoGoogle:'davidjmercadop@gmail.com'},
+  {id:2,usuario:'jrodriguez',clave:'0000',rol:'admin',correoGoogle:''},
 ];
 
 const SEED_CLIENTES = [
@@ -872,7 +892,7 @@ const GLOBAL={
   set sesion(v){try{if(v===null)sessionStorage.removeItem('cc_sesion');else sessionStorage.setItem('cc_sesion',JSON.stringify(v))}catch{}},
   get nextIdCartera(){return lsGet('cc_next_cartera',1)},
   set nextIdCartera(v){lsSet('cc_next_cartera',v)},
-  get nextIdUsuario(){return lsGet('cc_next_usuario',2)},
+  get nextIdUsuario(){return lsGet('cc_next_usuario',3)},
   set nextIdUsuario(v){lsSet('cc_next_usuario',v)},
 };
 
@@ -1152,12 +1172,28 @@ function calcEstadoReal(cred, pagos, tasaMoraDiaria, today){
 // ══════════════════════════════════════════════════════
 // LOGIN / SELECCIÓN DE CARTERA / LOGOUT
 // ══════════════════════════════════════════════════════
+function togglePassVer(inputId, eyeId){
+  const inp=document.getElementById(inputId);
+  const eye=document.getElementById(eyeId);
+  if(!inp)return;
+  const isHidden=inp.type==='password';
+  inp.type=isHidden?'text':'password';
+  if(eye) eye.textContent=isHidden?'🙈':'👁';
+  inp.focus();
+}
 function populateLoginUsuarios(){
-  const dl=document.getElementById('l-user-list');if(!dl)return;
-  dl.innerHTML=GLOBAL.usuarios.map(u=>`<option value="${esc(u.usuario)}">`).join('');
-  const inp=document.getElementById('l-user');if(!inp)return;
-  const admin=GLOBAL.usuarios.find(u=>u.usuario===ADMIN.usuario);
-  if(admin&&!inp.value)inp.value=admin.usuario;
+  const dl=document.getElementById('l-user-list');
+  if(dl){
+    // Mostrar todos los usuarios en el datalist para selección rápida
+    dl.innerHTML=GLOBAL.usuarios.map(u=>
+      `<option value="${esc(u.usuario)}">${esc(u.usuario)}${u.rol==='admin'?' (Admin)':''}</option>`
+    ).join('');
+  }
+  const inp=document.getElementById('l-user');
+  if(!inp||inp.value) return; // no sobreescribir si ya tiene valor
+  // Prellenar con el primer admin disponible
+  const primerAdmin=GLOBAL.usuarios.find(u=>u.rol==='admin');
+  if(primerAdmin) inp.value=primerAdmin.usuario;
 }
 function applyRoleUI(){
   const sesion=GLOBAL.sesion;
@@ -7676,7 +7712,17 @@ function renderUsuarios(){
       <div id="form-usuario" class="hidden" style="padding:20px;background:var(--bg);border-bottom:1px solid var(--border)">
         <div class="grid3">
           <div class="field"><label>Nombre de usuario *</label><input id="fu-usuario" type="text"/></div>
-          <div class="field"><label>Contraseña *</label><input id="fu-clave" type="text"/></div>
+          <div class="field"><label>Contraseña *</label>
+            <div style="position:relative;display:flex;align-items:center">
+              <input id="fu-clave" type="password" placeholder="Contraseña" style="width:100%;padding-right:42px"/>
+              <button type="button" onclick="togglePassVer('fu-clave','fu-clave-eye')"
+                style="position:absolute;right:10px;background:none;border:none;cursor:pointer;
+                       color:var(--muted);padding:4px;display:flex;align-items:center;font-size:16px"
+                title="Ver/ocultar contraseña">
+                <span id="fu-clave-eye">👁</span>
+              </button>
+            </div>
+          </div>
           <div class="field"><label>Rol *</label>
             <select id="fu-rol">
               <option value="usuario">Usuario</option>
@@ -7847,6 +7893,9 @@ function toggleFormUsuario(hide){
     f.classList.remove('hidden');
     document.getElementById('fu-usuario').value='';
     document.getElementById('fu-clave').value='';
+    document.getElementById('fu-clave').type='password';
+    const eyeEl=document.getElementById('fu-clave-eye');
+    if(eyeEl) eyeEl.textContent='👁';
     document.getElementById('fu-rol').value='usuario';
     document.getElementById('fu-correo-google').value='';
     const fuh=document.getElementById('fu-correo-hint');
