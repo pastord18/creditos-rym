@@ -8356,37 +8356,46 @@ function eliminarUsuario(id){
   populateLoginUsuarios();
 
   function continueInit(){
-    const sesion=GLOBAL.sesion;
-    if((sesion&&sesion.usuario)){
-      const user=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
-      if(user){
-        GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
-        // Restore cartera if was active
-        const savedCartera=lsGet('cc_active_cartera',null);
-        if(savedCartera&&GLOBAL.carteras.find(c=>c.id===savedCartera)){
-          // Check access
-          const cu=GLOBAL.carterasUsuarios;
-          const hasAccess=user.rol==='admin'||(cu[savedCartera]||[]).includes(user.usuario);
-          if(hasAccess){
-            document.getElementById('login-screen').style.display='none';
-            entrarCartera(savedCartera);
-            return;
+    const loginEl=document.getElementById('login-screen');
+    // Siempre mostrar login primero como estado seguro
+    if(loginEl) loginEl.style.display='flex';
+
+    try{
+      const sesion=GLOBAL.sesion;
+      if((sesion&&sesion.usuario)){
+        const user=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
+        if(user){
+          GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
+          // Restore cartera if was active
+          const savedCartera=lsGet('cc_active_cartera',null);
+          if(savedCartera&&GLOBAL.carteras.find(c=>c.id===savedCartera)){
+            // Check access
+            const cu=GLOBAL.carterasUsuarios;
+            const hasAccess=user.rol==='admin'||(cu[savedCartera]||[]).includes(user.usuario);
+            if(hasAccess){
+              if(loginEl) loginEl.style.display='none';
+              entrarCartera(savedCartera);
+              return;
+            }
           }
+          if(loginEl) loginEl.style.display='none';
+          showCarteraScreen();
+          return;
+        } else {
+          GLOBAL.sesion=null;
         }
-        document.getElementById('login-screen').style.display='none';
-        showCarteraScreen();
-      } else {
-        GLOBAL.sesion=null;
       }
+    } catch(e){
+      console.warn('continueInit error:', e);
+      GLOBAL.sesion=null;
     }
+    // Fallback garantizado: mostrar login
+    if(loginEl) loginEl.style.display='flex';
   }
 
-  // Mostrar la app inmediatamente — nunca bloquear el login esperando a Google Drive.
-  // Drive se inicializa EN PARALELO de forma no bloqueante.
-  // Esto evita pantallas en blanco por COOP, timeouts, o bloqueos de red.
-  // Ensure login screen is always visible on load
+  // Mostrar login SIEMPRE primero — nunca pantalla negra
   const loginEl = document.getElementById('login-screen');
-  if(loginEl) loginEl.style.display = 'flex';
+  if(loginEl){ loginEl.style.display='flex'; loginEl.style.visibility='visible'; }
 
   continueInit();
 
