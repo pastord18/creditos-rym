@@ -378,7 +378,7 @@ header{display:none}  /* replaced by sidebar+topbar */
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:500">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-icon">🏦</div>
@@ -8350,8 +8350,9 @@ function eliminarUsuario(id){
 }
 
 // ══════════════════════════════════════════════════════
-// INICIO
+// INICIO — garantizar que el DOM existe antes de ejecutar
 // ══════════════════════════════════════════════════════
+function _runInit(){
 (function init(){
   populateLoginUsuarios();
 
@@ -8406,8 +8407,15 @@ function eliminarUsuario(id){
   })();
 
   // Inicializar Drive en segundo plano, sin bloquear la UI
-  GD._initBackground();
+  try{ GD._initBackground(); } catch(e){ console.warn('GD init error:', e); }
 })();
+}
+// Ejecutar cuando el DOM esté listo — funciona tanto en carga normal como en GitHub Pages
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', _runInit);
+} else {
+  _runInit(); // DOM ya está listo
+}
 </script>
 </body>
 </html>
