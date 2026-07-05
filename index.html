@@ -4,370 +4,239 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Créditos R&M</title>
+<script>
+// Aplicar el tema guardado ANTES de pintar, para evitar parpadeo (flash) al cargar.
+(function(){
+  try{
+    var saved = localStorage.getItem('cc_theme');
+    var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  }catch(e){}
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ══════════════════════════════════════════════════════
-   DESIGN TOKENS — Créditos R&M 2026
-   Paleta: Navy profundo / Dorado cálido / Superficie limpia
-══════════════════════════════════════════════════════ */
-:root{
-  --navy:#0B1E3D; --navy2:#162B52; --navy3:#1F3A6E;
-  --gold:#C9A84C; --gold2:#E8C96A; --gold-dim:rgba(201,168,76,.15);
-  --bg:#F4F6FB; --surface:#FFFFFF; --surface2:#F9FAFD;
-  --border:#E2E8F0; --border2:#CBD5E1;
-  --text:#0B1E3D; --text2:#475569; --text3:#94A3B8;
-  --ok:#16A34A; --ok-bg:#F0FDF4;
-  --err:#DC2626; --err-bg:#FEF2F2;
-  --warn:#B45309; --warn-bg:#FFFBEB;
-  --mora:#7C3AED; --mora-bg:#F5F3FF;
-  --sidebar-w:220px; --sidebar-w-col:60px;
-  --topbar-h:52px;
-  --radius:10px; --radius-lg:14px;
-  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
-  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
-  --shadow-lg:0 10px 30px rgba(0,0,0,.12);
-  --transition:.18s cubic-bezier(.4,0,.2,1);
-}
-/* Dark mode */
-@media(prefers-color-scheme:dark){
-  :root{
-    --bg:#0D1520; --surface:#141E2E; --surface2:#1A2540;
-    --border:#1E2D45; --border2:#253552;
-    --text:#E2E8F0; --text2:#94A3B8; --text3:#475569;
-    --shadow:0 1px 3px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
-    --shadow-md:0 4px 12px rgba(0,0,0,.3);
-  }
-}
+/* ── Reset & Base ── */
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Inter',sans-serif;background:#0B1E3D;color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-
-/* ── LAYOUT SHELL ── */
-#app-shell{display:flex;height:100vh;overflow:hidden;background:var(--bg,#F4F6FB)}
-
-/* ── SIDEBAR ── */
-#sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
-  background:var(--navy);
-  display:flex;flex-direction:column;
-  transition:width var(--transition);
-  position:relative;z-index:100;
-  box-shadow:2px 0 12px rgba(0,0,0,.15);
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans','Manrope',Inter,system-ui,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  transition:background .25s ease,color .25s ease}
+:root{
+  --navy:#0F2044;--navy2:#1A3260;--gold:#C9A84C;--gold2:#E8C96A;
+  --text:#0F2044;
+  --bg:#EEF2FA;--surface:#fff;--surface2:#F2F6FC;--border:#DCE4F5;--muted:#5A6E9A;
+  --ok:#1A7A4A;--ok-bg:#E6F5ED;--err:#C0392B;--err-bg:#FDECEA;
+  --warn:#B07D12;--warn-bg:#FEF9E7;--mora:#7B2D8B;--mora-bg:#F5E6FA;
+  --r-sm:10px;--r-md:16px;--r-lg:20px;--r-xl:26px;
+  --shadow-sm:0 1px 3px rgba(15,32,68,.06),0 1px 2px rgba(15,32,68,.04);
+  --shadow-md:0 8px 24px rgba(15,32,68,.08),0 2px 6px rgba(15,32,68,.05);
+  --shadow-lg:0 20px 48px rgba(15,32,68,.14);
+  --glass:rgba(255,255,255,.72);
 }
-#sidebar.collapsed{width:var(--sidebar-w-col)}
-.sidebar-logo{
-  height:var(--topbar-h);display:flex;align-items:center;gap:10px;
-  padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);
-  flex-shrink:0;overflow:hidden;
+html[data-theme="dark"]{
+  --text:#EAF0FF;--gold:#E8C96A;--gold2:#F3DFA0;
+  --bg:#0B1220;--surface:#131B2E;--surface2:#182238;--border:#243252;--muted:#8DA0CC;
+  --ok:#3ECF8E;--ok-bg:#123024;--err:#FF6B6B;--err-bg:#33161A;
+  --warn:#F0B429;--warn-bg:#332609;--mora:#D79EEF;--mora-bg:#2A1733;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.35);
+  --shadow-md:0 8px 28px rgba(0,0,0,.45);
+  --shadow-lg:0 24px 60px rgba(0,0,0,.55);
+  --glass:rgba(19,27,46,.72);
 }
-.sidebar-logo-icon{font-size:22px;flex-shrink:0;line-height:1}
-.sidebar-logo-text{font-family:'Manrope',sans-serif;font-weight:800;font-size:15px;color:#fff;white-space:nowrap;overflow:hidden}
-.sidebar-logo-text span{color:var(--gold)}
-.sidebar-collapse-btn{
-  position:absolute;top:50%;right:-12px;transform:translateY(-50%);
-  width:24px;height:24px;border-radius:50%;background:var(--navy3);
-  border:1.5px solid rgba(255,255,255,.15);color:#fff;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:11px;
-  transition:var(--transition);z-index:10;
-}
-.sidebar-collapse-btn:hover{background:var(--gold);color:var(--navy)}
-.sidebar-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 0}
-.sidebar-nav::-webkit-scrollbar{width:3px}
-.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
-.sidebar-section-label{
-  font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  color:rgba(255,255,255,.35);padding:14px 18px 5px;white-space:nowrap;overflow:hidden;
-  transition:opacity var(--transition);
-}
-#sidebar.collapsed .sidebar-section-label{opacity:0}
-.nav-item{
-  display:flex;align-items:center;gap:11px;
-  padding:9px 18px;cursor:pointer;border:none;background:none;
-  width:100%;text-align:left;color:rgba(255,255,255,.65);
-  font-size:13px;font-weight:500;font-family:'Inter',sans-serif;
-  border-radius:0;transition:background var(--transition),color var(--transition);
-  white-space:nowrap;overflow:hidden;position:relative;
-}
-.nav-item svg{flex-shrink:0;opacity:.7;transition:opacity var(--transition)}
-.nav-item-label{overflow:hidden;transition:opacity var(--transition),max-width var(--transition)}
-#sidebar.collapsed .nav-item-label{opacity:0;max-width:0}
-.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
-.nav-item:hover svg{opacity:1}
-.nav-item.active{background:var(--gold-dim);color:var(--gold);font-weight:700;border-left:3px solid var(--gold)}
-.nav-item.active svg{opacity:1;color:var(--gold)}
-/* Tooltip on collapsed */
-#sidebar.collapsed .nav-item:hover::after{
-  content:attr(data-label);
-  position:absolute;left:calc(var(--sidebar-w-col) + 8px);top:50%;transform:translateY(-50%);
-  background:var(--navy3);color:#fff;font-size:12px;font-weight:600;
-  padding:5px 10px;border-radius:6px;white-space:nowrap;z-index:999;
-  box-shadow:var(--shadow-md);pointer-events:none;
-}
-.sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0;overflow:hidden}
-.user-pill{
-  display:flex;align-items:center;gap:9px;padding:8px 10px;
-  border-radius:8px;background:rgba(255,255,255,.06);cursor:pointer;
-  transition:background var(--transition);
-}
-.user-pill:hover{background:rgba(255,255,255,.1)}
-.user-avatar{
-  width:30px;height:30px;border-radius:50%;background:var(--gold);
-  color:var(--navy);font-weight:800;font-size:13px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.user-info{overflow:hidden;min-width:0}
-.user-name{font-size:12.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.user-role{font-size:10.5px;color:rgba(255,255,255,.45);white-space:nowrap}
-#sidebar.collapsed .user-info,.sidebar.collapsed .user-logout{display:none}
-
-/* ── MAIN AREA ── */
-#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-
-/* ── TOPBAR ── */
-#topbar{
-  height:var(--topbar-h);background:var(--surface);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:12px;
-  padding:0 20px;flex-shrink:0;
-  box-shadow:0 1px 0 var(--border);
-}
-.topbar-breadcrumb{
-  display:flex;align-items:center;gap:6px;
-  font-size:13px;color:var(--text2);font-weight:500;flex:1;min-width:0;
-}
-.topbar-breadcrumb .crumb-current{font-weight:700;color:var(--text);white-space:nowrap}
-.topbar-breadcrumb .crumb-sep{color:var(--text3)}
-.topbar-badges{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.cartera-chip{
-  display:flex;align-items:center;gap:6px;
-  background:var(--gold-dim);border:1px solid rgba(201,168,76,.3);
-  border-radius:20px;padding:4px 12px;font-size:11.5px;font-weight:700;
-  color:var(--gold);cursor:pointer;white-space:nowrap;transition:var(--transition);
-}
-.cartera-chip:hover{background:rgba(201,168,76,.25)}
-.gd-pill{
-  display:flex;align-items:center;gap:5px;padding:4px 10px;
-  border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;
-}
-.save-flash{font-size:11.5px;font-weight:600;color:var(--ok);opacity:0;transition:opacity .3s}
-.save-flash.show{opacity:1}
-
-/* ── PAGE CONTENT ── */
-#page-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px}
-.section{display:none}.section.active{display:block}
-
-/* ── SKELETON LOADER ── */
-.skeleton{background:linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.skeleton-card{height:90px;border-radius:var(--radius);margin-bottom:12px}
-.skeleton-row{height:20px;margin-bottom:8px}
-
-/* ── CARDS ── */
-.card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
-.card-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface)}
-.card-title{font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;color:var(--text);display:flex;align-items:center;gap:8px}
-.card-body{padding:20px}
-
-/* ── STAT CARDS ── */
-.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
-.stat-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:18px 20px;box-shadow:var(--shadow);
-  display:flex;flex-direction:column;gap:4px;
-  border-left:3px solid transparent;transition:var(--transition);
-}
-.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
-.stat-icon{font-size:18px;margin-bottom:4px}
-.stat-value{font-family:'Manrope',sans-serif;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1}
-.stat-label{font-size:11.5px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
-.stat-sub{font-size:10.5px;color:var(--text3);margin-top:2px;line-height:1.3}
-
-/* ── TABLES ── */
-.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead tr{background:var(--surface2)}
-th{padding:10px 13px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:10px 13px;border-bottom:1px solid var(--border);color:var(--text);font-size:13px;vertical-align:middle}
-tbody tr:hover{background:var(--surface2)}
-tbody tr:last-child td{border-bottom:none}
-
-/* ── FORMS ── */
-.field{display:flex;flex-direction:column;gap:5px}
-label{font-size:11.5px;font-weight:600;color:var(--text2);letter-spacing:.03em;text-transform:uppercase}
-input,select,textarea{
-  padding:8px 12px;border-radius:8px;
-  border:1.5px solid var(--border2);font-size:13px;color:var(--text);
-  background:var(--surface);outline:none;transition:border-color var(--transition);font-family:inherit;width:100%
-}
-input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+/* ── Layout ── */
+#app{min-height:100vh}
+header{background:linear-gradient(120deg,var(--navy) 0%,var(--navy2) 55%,#233F78 100%);
+  color:#fff;padding:0 26px;height:64px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 20px rgba(15,32,68,.3);backdrop-filter:blur(8px)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.6px}
+.logo span{background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+nav{display:flex;gap:3px;flex-wrap:wrap;background:rgba(255,255,255,.06);
+  padding:4px;border-radius:14px}
+.nav-btn{padding:7px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600;
+  font-size:12px;transition:.18s cubic-bezier(.4,0,.2,1);background:transparent;
+  color:rgba(255,255,255,.68)}
+.nav-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1A1408;box-shadow:0 2px 10px rgba(201,168,76,.35)}
+.nav-btn:hover:not(.active){background:rgba(255,255,255,.12);color:#fff}
+.header-right{display:flex;align-items:center;gap:12px}
+.save-msg{font-size:12px;color:var(--gold2);font-weight:600}
+.user-area{display:flex;align-items:center;gap:8px;padding-left:12px;
+  border-left:1px solid rgba(255,255,255,.2);font-size:12px;color:rgba(255,255,255,.75)}
+.theme-toggle{width:32px;height:32px;border-radius:10px;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.08);color:#fff;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;font-size:14px;transition:.15s}
+.theme-toggle:hover{background:rgba(255,255,255,.18)}
+main{padding:26px 30px;max-width:1360px;margin:0 auto}
+/* ── Cards ── */
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);
+  box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:20px;transition:box-shadow .2s,transform .2s}
+.card-header{padding:16px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.card-title{font-weight:700;font-size:15px;color:var(--text)}
+.card-body{padding:22px}
+/* ── Grid ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-.col-span2{grid-column:span 2}
-
-/* ── BUTTONS ── */
-.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:13px;transition:var(--transition);font-family:inherit;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--gold);color:var(--navy);box-shadow:0 1px 3px rgba(201,168,76,.4)}
-.btn-primary:hover{background:var(--gold2)}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
-.btn-secondary:hover{background:var(--border)}
-.btn-danger{background:var(--err);color:#fff}
-.btn-danger:hover{background:#B91C1C}
-.btn-success{background:var(--ok);color:#fff}
-.btn-success:hover{background:#15803D}
-.btn-sm{padding:5px 11px;font-size:12px;border-radius:6px}
-.btn-full{width:100%;justify-content:center}
-
-/* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.02em}
-.badge-blue{background:#EFF6FF;color:#1D4ED8}
+.col-span2{grid-column:1/-1}
+/* ── Form ── */
+.field{margin-bottom:0}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);
+  margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{width:100%;padding:9px 13px;border-radius:var(--r-sm);
+  border:1.5px solid var(--border);font-size:13px;color:var(--text);
+  background:var(--surface2);outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit}
+input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+textarea{resize:vertical;min-height:60px}
+/* ── Buttons ── */
+.btn{padding:9px 20px;border-radius:var(--r-sm);border:none;cursor:pointer;
+  font-weight:700;font-size:13px;transition:.18s cubic-bezier(.4,0,.2,1);font-family:inherit}
+.btn:hover{opacity:.92;transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1A1408;box-shadow:0 4px 14px rgba(201,168,76,.3)}
+.btn-success{background:linear-gradient(135deg,var(--ok),#22935A);color:#fff}
+.btn-danger{background:linear-gradient(135deg,var(--err),#D3564A);color:#fff}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-full{width:100%;padding:12px}
+/* ── Tables ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{padding:9px 13px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);
+  background:var(--surface2);white-space:nowrap}
+td{padding:10px 13px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+/* ── Badges ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700}
 .badge-green{background:var(--ok-bg);color:var(--ok)}
 .badge-red{background:var(--err-bg);color:var(--err)}
-.badge-gold{background:var(--gold-dim);color:var(--warn)}
-.badge-gray{background:var(--surface2);color:var(--text2)}
-
-/* ── PROGRESS BAR ── */
-.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;background:var(--gold);transition:.5s}
-
-/* ── INFO BOXES ── */
-.info-box{padding:12px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);font-size:13px;margin-bottom:12px}
-.info-box-warn{background:var(--warn-bg);border-color:var(--gold);color:var(--warn)}
-.info-box-err{background:var(--err-bg);border-color:var(--err);color:var(--err)}
-.info-box-ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
-.info-box-note{background:#EFF6FF;border-color:#93C5FD;color:#1D4ED8}
-
-/* ── MODALS ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal-box{background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
-.modal-icon{font-size:32px;text-align:center;margin-bottom:12px}
-.modal-title{font-family:'Manrope',sans-serif;font-weight:800;font-size:17px;color:var(--text);text-align:center;margin-bottom:5px}
-.modal-desc{font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px;white-space:pre-line}
-.modal-error{color:var(--err);font-size:12.5px;font-weight:600;min-height:18px;margin-top:4px;text-align:center}
-
-/* ── LOGIN SCREEN ── */
-#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0B1E3D 0%,#0A1628 40%,#162B52 100%);display:flex;align-items:center;justify-content:center;padding:20px;z-index:500;overflow-y:auto}
-.login-box{background:var(--surface);border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
-.login-logo{text-align:center;margin-bottom:24px}
-.login-logo-icon{font-size:48px;display:block;margin-bottom:10px}
-.login-title{font-family:'Manrope',sans-serif;font-weight:900;font-size:26px;color:var(--text);text-align:center}
+.badge-yellow{background:var(--warn-bg);color:var(--warn)}
+.badge-mora{background:var(--mora-bg);color:var(--mora)}
+.badge-gray{background:var(--surface2);color:var(--muted)}
+.badge-gold{background:var(--warn-bg);color:#A6831A}
+/* ── Stat cards ── */
+.stat-card{background:var(--surface);border-radius:var(--r-md);padding:18px 20px;
+  border:1px solid var(--border);border-left-width:4px;box-shadow:var(--shadow-sm);
+  transition:transform .2s,box-shadow .2s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat-icon{font-size:20px;margin-bottom:6px;width:38px;height:38px;border-radius:12px;
+  background:var(--surface2);display:flex;align-items:center;justify-content:center}
+.stat-value{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1.1;margin-top:10px}
+.stat-label{font-size:11px;color:var(--muted);font-weight:600;margin-top:3px}
+/* ── Sections (tabs) ── */
+.section{display:none}
+.section.active{display:block}
+/* ── Login ── */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--navy) 0%,#0A1628 40%,var(--navy2) 100%)}
+.login-box{background:var(--surface);border-radius:20px;padding:42px 38px;width:400px;max-width:93vw;
+  box-shadow:0 32px 80px rgba(0,0,0,.35)}
+/* ── User dropdown (selector de usuario con avatar) ── */
+.user-dropdown{position:relative}
+.user-dropdown-trigger{display:flex;align-items:center;border:1.5px solid var(--border);
+  border-radius:8px;background:var(--surface2);transition:border-color .15s}
+.user-dropdown.open .user-dropdown-trigger,.user-dropdown-trigger:focus-within{border-color:var(--gold)}
+.user-dropdown-trigger input{border:none!important;background:transparent!important;flex:1;
+  padding:9px 13px;font-size:13px;color:var(--text);min-width:0}
+.user-dropdown-trigger input:focus{outline:none;border:none!important}
+.user-dropdown-chevron{color:var(--muted);font-size:11px;padding:0 13px 0 6px;
+  transition:transform .15s;pointer-events:none;flex-shrink:0}
+.user-dropdown.open .user-dropdown-chevron{transform:rotate(180deg)}
+.user-dropdown-list{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(15,32,68,.14);
+  max-height:240px;overflow-y:auto;z-index:60;padding:6px;display:none}
+.user-dropdown.open .user-dropdown-list{display:block}
+.user-dropdown-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+  cursor:pointer;transition:background .1s}
+.user-dropdown-item:hover,.user-dropdown-item.hl{background:var(--surface2)}
+.user-dropdown-avatar{width:32px;height:32px;border-radius:50%;background:#FBF3DC;color:#A6831A;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+.user-dropdown-name{font-weight:700;font-size:13px;color:var(--text);line-height:1.3}
+.user-dropdown-role{font-size:11px;color:var(--muted);line-height:1.3}
+.user-dropdown-empty{padding:12px 10px;text-align:center;font-size:12px;color:var(--muted)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-icon{width:68px;height:68px;border-radius:18px;margin:0 auto 14px;
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  display:flex;align-items:center;justify-content:center;font-size:30px;
+  box-shadow:0 8px 24px rgba(15,32,68,.25)}
+.login-title{font-weight:900;font-size:24px;color:var(--text)}
 .login-title span{color:var(--gold)}
-.login-subtitle{font-size:13px;color:var(--text2);text-align:center;margin-top:4px;margin-bottom:24px}
-.login-footer{text-align:center;font-size:11.5px;color:var(--text3);margin-top:16px;padding:8px;background:var(--surface2);border-radius:8px}
-.login-error{color:var(--err);font-size:12.5px;font-weight:600;padding:8px 12px;background:var(--err-bg);border-radius:7px;margin-top:8px;display:none}
-.login-error:not(.hidden){display:block}
-
-/* ── CARTERA SCREEN ── */
-#cartera-screen{min-height:100vh;background:linear-gradient(135deg,var(--navy) 0%,#0A1628 40%,var(--navy2) 100%);font-family:'Inter',sans-serif;display:none}
-
-/* ── MISC ── */
+.login-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.login-error{padding:9px 13px;background:var(--err-bg);border-radius:8px;
+  color:var(--err);font-size:12.5px;font-weight:600;text-align:center;margin-bottom:12px}
+.login-footer{margin-top:20px;padding:11px 14px;background:var(--bg);border-radius:10px;
+  font-size:11.5px;color:var(--muted);text-align:center}
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,32,68,.55);
+  display:flex;align-items:center;justify-content:center;z-index:9999}
+.modal-box{background:var(--surface);border-radius:16px;padding:30px;width:400px;max-width:93vw;
+  box-shadow:0 20px 60px rgba(15,32,68,.3)}
+.modal-icon{font-size:30px;text-align:center;margin-bottom:8px}
+.modal-title{font-weight:800;font-size:17px;color:var(--text);text-align:center;margin-bottom:5px}
+.modal-desc{font-size:12.5px;color:var(--muted);text-align:center;margin-bottom:18px;line-height:1.5}
+.modal-desc strong{color:var(--err)}
+.modal-error{color:var(--err);font-size:11.5px;margin-top:5px;text-align:center;font-weight:600}
+/* ── Info box ── */
+.info-box{padding:13px 16px;border-radius:10px;font-size:12.5px;line-height:1.6}
+.info-box-warn{background:var(--warn-bg);border:1px solid var(--gold);color:var(--warn)}
+.info-box-err{background:var(--err-bg);color:var(--err)}
+.info-box-ok{background:var(--ok-bg);color:var(--ok);font-weight:600}
+.info-box-mora{background:var(--mora-bg);border:1px solid var(--mora);color:var(--mora)}
+.info-box-note{background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+/* ── Progress bar ── */
+.progress-track{height:6px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:10px}
+.progress-fill{height:100%;border-radius:3px;background:var(--gold);transition:.5s}
+/* ── Amort header card ── */
+.amort-card{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,#2A4A8E 100%);
+  border-radius:16px;padding:26px 30px;margin-bottom:22px;color:#fff;position:relative;overflow:hidden}
+.amort-card::before,.amort-card::after{content:'';position:absolute;border-radius:50%;
+  background:rgba(201,168,76,.1);pointer-events:none}
+.amort-card::before{width:200px;height:200px;right:-50px;top:-50px}
+.amort-card::after{width:140px;height:140px;right:60px;bottom:-60px}
+.amort-card-inner{position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.amort-saldo{font-size:30px;font-weight:800;color:var(--gold);line-height:1}
+.amort-mora{font-size:13px;color:#F0AAFF;font-weight:700;margin-top:4px}
+/* ── Import log ── */
+.import-log-item{padding:7px 11px;border-radius:8px;font-size:12.5px;margin-bottom:5px}
+/* ── Drop zone ── */
+.drop-zone{border:2px dashed var(--gold);background:var(--warn-bg);border-radius:12px;
+  padding:26px;text-align:center;cursor:pointer;transition:.15s}
+.drop-zone:hover{background:#FFF3CC}
+/* ── Desglose cuota ── */
+.desglose{padding:13px 15px;border-radius:10px;margin-top:4px}
+/* ── Hidden ── */
 .hidden{display:none!important}
-.section-title{font-family:'Manrope',sans-serif;font-weight:800;font-size:18px;color:var(--text);margin-bottom:4px}
-.section-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
-.row-actions{display:flex;gap:6px;flex-wrap:wrap}
-.tbl-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
-.tbl-filters input,.tbl-filters select{max-width:220px;padding:7px 11px}
-
-/* ── AMORTIZATION ── */
-.amort-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:10px;box-shadow:var(--shadow)}
-
-/* ── CAJA SIDEBAR ── */
-.caja-layout{display:flex;gap:0;min-height:calc(100vh - 140px)}
-.caja-sidebar{width:200px;flex-shrink:0;background:var(--navy);border-radius:var(--radius-lg) 0 0 var(--radius-lg);padding:16px 0;overflow:hidden}
-.caja-sidebar-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;border:none;cursor:pointer;border-left:3px solid transparent;background:transparent;color:rgba(255,255,255,.7);font-weight:500;font-size:12px;font-family:inherit;text-align:left;transition:var(--transition)}
-.caja-sidebar-btn:hover{background:rgba(255,255,255,.07);color:#fff}
-.caja-sidebar-btn.active{background:var(--gold-dim);color:var(--gold);font-weight:700;border-left-color:var(--gold)}
-.caja-main{flex:1;background:var(--surface);border-radius:0 var(--radius-lg) var(--radius-lg) 0;overflow:hidden;border:1px solid var(--border);border-left:none}
-
-/* ── COBROS SIDEBAR ── */
-.cobros-layout{display:flex;gap:0;min-height:calc(100vh - 140px)}
-.cobros-sidebar{width:200px;flex-shrink:0;background:var(--navy);border-radius:var(--radius-lg) 0 0 var(--radius-lg);padding:16px 0}
-.cobros-sidebar-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;border:none;cursor:pointer;border-left:3px solid transparent;background:transparent;color:rgba(255,255,255,.7);font-weight:500;font-size:12px;font-family:inherit;text-align:left;transition:var(--transition)}
-.cobros-sidebar-btn:hover{background:rgba(255,255,255,.07);color:#fff}
-.cobros-sidebar-btn.active{background:var(--gold-dim);color:var(--gold);font-weight:700;border-left-color:var(--gold)}
-.cobros-main{flex:1;background:var(--surface);border-radius:0 var(--radius-lg) var(--radius-lg) 0;overflow:hidden;border:1px solid var(--border);border-left:none}
-
-/* ── RESPONSIVE ── */
-@media(max-width:768px){
-  .stat-grid{grid-template-columns:1fr 1fr}
+/* ── Page title ── */
+.page-title{font-weight:800;font-size:21px;margin-bottom:4px}
+.page-sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+/* ── Row actions ── */
+.row-actions{display:flex;gap:5px;white-space:nowrap}
+/* ── Responsive ── */
+@media(max-width:900px){
+  main{padding:16px}
   .grid2,.grid3,.grid4,.grid5{grid-template-columns:1fr}
-  #sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;transform:translateX(-100%);transition:transform var(--transition)}
-  #sidebar.mobile-open{transform:translateX(0)}
-  #sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199}
-  #sidebar-overlay.show{display:block}
-  #main-area{width:100%}
-  .caja-layout,.cobros-layout{flex-direction:column}
-  .caja-sidebar,.cobros-sidebar{width:100%;border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:10px;display:flex;flex-wrap:wrap;gap:4px}
-  .caja-main,.cobros-main{border-radius:0 0 var(--radius-lg) var(--radius-lg);border-left:1px solid var(--border);border-top:none}
+  header{padding:0 14px;height:auto;flex-wrap:wrap;gap:8px;padding:10px 14px}
+  nav{flex-wrap:wrap}
 }
-@media(min-width:769px) and (max-width:1100px){
-  .stat-grid{grid-template-columns:1fr 1fr}
-  .grid4,.grid5{grid-template-columns:1fr 1fr}
-}
+/* ── Impresión / Exportar PDF ── */
 @media print{
   body *{visibility:hidden}
   #estado-print-area,#estado-print-area *{visibility:visible}
   #estado-print-area{position:absolute;left:0;top:0;width:100%;margin:0;padding:0}
   .no-print{display:none!important}
+  .amort-card{break-inside:avoid}
   table{font-size:10px}
 }
-
-/* ── LOGIN MISSING CLASSES ── */
-.login-icon{font-size:48px;display:block;text-align:center;margin-bottom:10px}
-.login-sub{font-size:13px;color:var(--text2);text-align:center;margin-top:4px;margin-bottom:24px}
-
-/* ── USER DROPDOWN (login) ── */
-.user-dropdown{position:relative}
-.user-dropdown-trigger{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);cursor:pointer;transition:border-color var(--transition)}
-.user-dropdown-trigger input{border:none;background:none;outline:none;flex:1;font-size:13px;color:var(--text);padding:0;cursor:pointer;font-family:inherit;min-width:0}
-.user-dropdown-trigger:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
-.user-dropdown-chevron{color:var(--text3);font-size:12px;flex-shrink:0}
-.user-dropdown-list{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:200;overflow:hidden;display:none;max-height:220px;overflow-y:auto}
-.user-dropdown.open .user-dropdown-list{display:block}
-.user-dropdown-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background var(--transition);font-size:13px;color:var(--text)}
-.user-dropdown-item:hover{background:var(--surface2)}
-.user-dropdown-item .u-name{font-weight:600}
-.user-dropdown-item .u-role{font-size:11px;color:var(--text3)}
-.user-dropdown-avatar{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--navy);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-/* ── SIDEBAR SECTION LABEL ── */
-.sidebar-section-label{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);padding:14px 18px 5px;white-space:nowrap;overflow:hidden;transition:opacity var(--transition)}
-#sidebar.collapsed .sidebar-section-label{opacity:0;height:0;padding:0;overflow:hidden}
-
-/* ── MUTED COLOR VAR (alias) ── */
-:root{--muted:var(--text3)}
-
-/* ── HEADER BACK COMPAT ── */
-header{display:none}  /* replaced by sidebar+topbar */
-.logo-old{display:none}
-.nav-btn{display:none}  /* replaced by nav-item */
-.user-area{display:none}
-.header-right{display:none}
-.section{padding:0}  /* padding now on #page-content */
-
-/* ── TAB CONTENT ── */
-#tab-dashboard,#tab-clientes,#tab-creditos,#tab-cobros,
-#tab-caja,#tab-analisis,#tab-datos,#tab-usuarios{
-  display:none;
-}
-#tab-dashboard.active,#tab-clientes.active,#tab-creditos.active,
-#tab-cobros.active,#tab-caja.active,#tab-analisis.active,
-#tab-datos.active,#tab-usuarios.active{
-  display:block;
-}
-
-/* ── CARTERA SCREEN BACK COMPAT ── */
-.cartera-box{background:var(--surface);border-radius:20px;padding:36px;width:100%;max-width:520px;box-shadow:var(--shadow-lg);border:1px solid var(--border);margin:auto}
-
-.user-dropdown-name{font-weight:600;font-size:13px;color:var(--text)}
-.user-dropdown-role{font-size:11px;color:var(--text3)}
-.user-dropdown-empty{padding:12px 14px;font-size:12px;color:var(--text3);text-align:center}
 </style>
   <!-- Google Identity Services + Drive API -->
   <script src="https://accounts.google.com/gsi/client" async defer
@@ -378,7 +247,7 @@ header{display:none}  /* replaced by sidebar+topbar */
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:500">
+<div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
       <div class="login-icon">🏦</div>
@@ -420,7 +289,7 @@ header{display:none}  /* replaced by sidebar+topbar */
     <!-- GOOGLE DRIVE EN LOGIN — para sincronizar usuarios/carteras al entrar desde otro dispositivo/navegador -->
     <div id="login-gd-panel" style="margin-top:16px;padding:12px 14px;background:#F4F7FF;border:1.5px solid #C9D6F0;border-radius:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <span style="font-size:11.5px;color:var(--navy2);font-weight:600">
+        <span style="font-size:11.5px;color:#1A3260;font-weight:600">
           ☁ Sincronizar con Google Drive
         </span>
         <span id="login-gd-status" style="font-size:10.5px;font-weight:700;color:#8A9AB8">⏳ Verificando...</span>
@@ -457,7 +326,7 @@ header{display:none}  /* replaced by sidebar+topbar */
           <button onclick="emergencyDiagnose()" style="padding:8px 12px;background:#C9A84C;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">
             🔍 Diagnosticar datos en memoria
           </button>
-          <button onclick="emergencyHardReset()" style="padding:8px 12px;background:var(--err);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">
+          <button onclick="emergencyHardReset()" style="padding:8px 12px;background:#C0392B;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">
             🗑 RESET TOTAL — Borrar todos los datos y empezar de cero
           </button>
           <div id="emergency-output" style="font-size:11px;font-family:monospace;background:#0F2044;color:#C9A84C;padding:10px;border-radius:7px;white-space:pre-wrap;display:none;max-height:180px;overflow-y:auto"></div>
@@ -502,123 +371,69 @@ header{display:none}  /* replaced by sidebar+topbar */
 </div>
 
 <!-- APP -->
-<!-- Mobile sidebar overlay -->
-<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
 <div id="app" class="hidden">
-<div id="app-shell">
-
-  <!-- ═══ SIDEBAR ═══ -->
-  <aside id="sidebar">
-    <div class="sidebar-logo">
-      <span class="sidebar-logo-icon">🏦</span>
-      <span class="sidebar-logo-text">Créditos <span>R&amp;M</span></span>
-    </div>
-    <button class="sidebar-collapse-btn" onclick="toggleSidebar()" title="Colapsar menú">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><path id="sidebar-arrow" d="M6.5 1L2.5 5L6.5 9"/></svg>
-    </button>
-
-    <nav class="sidebar-nav">
-      <div class="sidebar-section-label">Principal</div>
-      <button class="nav-item active" data-tab="dashboard" data-label="Dashboard" onclick="switchTab('dashboard',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        <span class="nav-item-label">Dashboard</span>
-      </button>
-      <button class="nav-item" data-tab="clientes" data-label="Clientes" onclick="switchTab('clientes',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
-        <span class="nav-item-label">Clientes</span>
-      </button>
-      <button class="nav-item" data-tab="creditos" data-label="Créditos" onclick="switchTab('creditos',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-        <span class="nav-item-label">Créditos</span>
-      </button>
-      <button class="nav-item" data-tab="cobros" data-label="Cobros" onclick="switchTab('cobros',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="nav-item-label">Cobros</span>
-      </button>
-      <button class="nav-item" data-tab="caja" data-label="Caja" onclick="switchTab('caja',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><path d="M8 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-        <span class="nav-item-label">Caja</span>
-      </button>
-
-      <div class="sidebar-section-label">Análisis</div>
-      <button class="nav-item" data-tab="analisis" data-label="Análisis" onclick="switchTab('analisis',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span class="nav-item-label">Análisis</span>
-      </button>
-      <button class="nav-item" data-tab="datos" data-label="Datos" onclick="switchTab('datos',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span class="nav-item-label">Datos</span>
-      </button>
-      <button class="nav-item hidden" data-tab="usuarios" data-label="Usuarios" onclick="switchTab('usuarios',this)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span class="nav-item-label">Usuarios</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="user-pill" onclick="doLogout()" title="Cerrar sesión">
-        <div class="user-avatar" id="user-avatar-initial">A</div>
-        <div class="user-info">
-          <div class="user-name" id="header-user"></div>
-          <div class="user-role" id="header-role">Admin</div>
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" style="flex-shrink:0;margin-left:auto"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  <header>
+    <div class="logo">🏦 Créditos <span>R&amp;M</span></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="cartera-badge" style="display:none;background:rgba(201,168,76,.18);border:1px solid rgba(201,168,76,.4);border-radius:20px;padding:4px 14px;font-size:12px;font-weight:700;color:#E8C96A;cursor:pointer" onclick="volverACarteras()" title="Cambiar cartera">
+        📂 <span id="cartera-badge-name"></span> <span style="opacity:.6;font-size:10px">▼ cambiar</span>
       </div>
     </div>
-  </aside>
-
-  <!-- ═══ MAIN AREA ═══ -->
-  <div id="main-area">
-
-    <!-- TOPBAR -->
-    <div id="topbar">
-      <button onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;color:var(--text2);padding:4px;display:flex;align-items:center;border-radius:6px;flex-shrink:0" title="Menú">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <div class="header-right">
+      <!-- Google Drive status badge -->
+      <span id="gd-status" style="display:none;font-size:11px;font-weight:700;color:#fff;
+        padding:3px 10px;border-radius:20px;background:#1A7A4A;cursor:pointer;white-space:nowrap"
+        onclick="GD.isConnected()?GD.fullSyncAll():GD.requestToken()"
+        title="Clic para sincronizar manualmente con Drive (todas las carteras)">☁ Drive</span>
+      <button id="gd-login-btn" onclick="GD.requestToken()"
+        style="display:none;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;
+        border:1.5px solid #4285F4;background:#fff;color:#4285F4;font-size:11px;font-weight:700;cursor:pointer">
+        <svg width="12" height="12" viewBox="0 0 24 24" style="flex-shrink:0">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Drive
       </button>
-      <div class="topbar-breadcrumb">
-        <span style="color:var(--text3);font-size:12px">Créditos R&amp;M</span>
-        <span class="crumb-sep">/</span>
-        <span class="crumb-current" id="topbar-title">Dashboard</span>
-      </div>
-      <div class="topbar-badges">
-        <span id="save-msg" class="save-flash">✓ Guardado</span>
-        <!-- Drive badge -->
-        <span id="gd-status" style="display:none" class="gd-pill"
-          onclick="GD.isConnected()?GD.fullSyncAll():GD.requestToken()"
-          title="Clic para sincronizar con Drive">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Drive
+      <span id="save-msg" class="save-msg hidden">💾 Guardado</span>
+      <button id="theme-toggle-btn" class="theme-toggle" onclick="toggleTheme()" title="Cambiar a modo oscuro">
+        <span id="theme-toggle-icon" style="display:flex;line-height:0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
         </span>
-        <button id="gd-login-btn" onclick="GD.requestToken()"
-          style="display:none;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;
-          border:1.5px solid #4285F4;background:var(--surface);color:#4285F4;font-size:11px;font-weight:700;cursor:pointer">
-          <svg width="12" height="12" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Conectar Drive
-        </button>
-        <div id="cartera-badge" style="display:none" class="cartera-chip" onclick="volverACarteras()" title="Cambiar cartera">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span id="cartera-badge-name"></span>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <nav>
+        <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
+        <button class="nav-btn" data-tab="clientes" onclick="switchTab('clientes',this)">👤 Clientes</button>
+        <button class="nav-btn" data-tab="creditos" onclick="switchTab('creditos',this)">💳 Créditos</button>
+        <button class="nav-btn" data-tab="cobros" onclick="switchTab('cobros',this)">💰 Cobros</button>
+        <button class="nav-btn" data-tab="caja" onclick="switchTab('caja',this)">💵 Caja</button>
+        <button class="nav-btn" data-tab="analisis" onclick="switchTab('analisis',this)">📈 Análisis</button>
+        <button class="nav-btn" data-tab="datos" onclick="switchTab('datos',this)">⬆⬇ Datos</button>
+        <button class="nav-btn hidden" data-tab="usuarios" onclick="switchTab('usuarios',this)">👥 Usuarios</button>
+      </nav>
+      <div class="user-area">
+        <div id="volver-carteras-btn" style="display:none">
+          <button class="btn btn-primary btn-sm" onclick="volverACarteras()" style="background:var(--gold);color:var(--text);font-weight:700;display:flex;align-items:center;gap:5px">
+            ← Seleccionar Cartera
+          </button>
         </div>
+        <span>👤 <span id="header-user"></span></span>
+        <button class="btn btn-secondary btn-sm" onclick="doLogout()">Cerrar sesión</button>
       </div>
     </div>
-
-    <!-- PAGE CONTENT -->
-    <div id="page-content">
-      <div id="tab-dashboard" class="section active"></div>
-      <div id="tab-clientes"  class="section"></div>
-      <div id="tab-creditos"  class="section"></div>
-      <div id="tab-cobros"    class="section"></div>
-      <div id="tab-caja"      class="section"></div>
-      <div id="tab-analisis"  class="section"></div>
-      <div id="tab-datos"     class="section"></div>
-      <div id="tab-usuarios"  class="section"></div>
-    </div>
-
-  </div><!-- /main-area -->
-</div><!-- /app-shell -->
-</div><!-- /app -->
+  </header>
+  <main>
+    <div id="tab-dashboard" class="section active"></div>
+    <div id="tab-clientes"  class="section"></div>
+    <div id="tab-creditos"  class="section"></div>
+    <div id="tab-cobros"    class="section"></div>
+    <div id="tab-caja"      class="section"></div>
+    <div id="tab-analisis"  class="section"></div>
+    <div id="tab-datos"     class="section"></div>
+    <div id="tab-usuarios"  class="section"></div>
+  </main>
+</div>
 
 <!-- ADMIN MODAL -->
 <div id="admin-modal" class="modal-overlay hidden">
@@ -872,10 +687,9 @@ const GD = {
   _showStatus(msg, type) {
     const el = document.getElementById('gd-status');
     if (!el) return;
-    const colors = { ok:'#16A34A', err:'#DC2626', sync:'#B45309', info:'#162B52' };
+    const colors = { ok: '#1A7A4A', err: '#C0392B', sync: '#B07D12', info: '#1A3260' };
     el.style.display = 'inline-flex';
-    el.style.background = colors[type] || '#162B52';
-    el.style.color = '#fff';
+    el.style.background = colors[type] || '#1A3260';
     el.textContent = msg;
   },
 
@@ -1366,8 +1180,8 @@ function saveAll(){
 }
 function showSaveMsg(){
   const el=document.getElementById('save-msg');if(!el)return;
-  el.classList.add('show');clearTimeout(showSaveMsg._t);
-  showSaveMsg._t=setTimeout(()=>el.classList.remove('show'),2000);
+  el.classList.remove('hidden');clearTimeout(showSaveMsg._t);
+  showSaveMsg._t=setTimeout(()=>el.classList.add('hidden'),1800);
 }
 
 // ══════════════════════════════════════════════════════
@@ -1501,6 +1315,22 @@ function calcEstadoReal(cred, pagos, tasaMoraDiaria, today){
 // ══════════════════════════════════════════════════════
 // LOGIN / SELECCIÓN DE CARTERA / LOGOUT
 // ══════════════════════════════════════════════════════
+const SUN_ICON='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+const MOON_ICON='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></svg>';
+function _updateThemeToggleIcon(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon = document.getElementById('theme-toggle-icon');
+  const btn = document.getElementById('theme-toggle-btn');
+  if (icon) icon.innerHTML = isDark ? MOON_ICON : SUN_ICON;
+  if (btn) btn.title = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+}
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  if (isDark){ html.removeAttribute('data-theme'); localStorage.setItem('cc_theme','light'); }
+  else { html.setAttribute('data-theme','dark'); localStorage.setItem('cc_theme','dark'); }
+  _updateThemeToggleIcon();
+}
 const EYE_ICON_OPEN='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
 const EYE_ICON_OFF='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.526 13.526 0 0 0 1 12s4 7 11 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
 function togglePassVer(inputId, eyeId){
@@ -1569,21 +1399,19 @@ function applyRoleUI(){
   const isAdmin=(sesion&&sesion.rol)==='admin';
   const noCartera=!CARTERA_ID;
   // Show/hide admin tab
-  const btnUsr=document.querySelector('.nav-item[data-tab="usuarios"]');
+  const btnUsr=document.querySelector('.nav-btn[data-tab="usuarios"]');
   if(btnUsr)btnUsr.classList.toggle('hidden',!isAdmin);
   // Hide cartera-dependent tabs if no cartera loaded
   ['dashboard','clientes','creditos','cobros','estado','caja','analisis','datos'].forEach(id=>{
-    const b=document.querySelector(`.nav-item[data-tab="${id}"]`);
+    const b=document.querySelector(`.nav-btn[data-tab="${id}"]`);
     if(b)b.classList.toggle('hidden',noCartera);
   });
-  // Badge and user info
+  // Show "← Seleccionar Cartera" button only when in admin mode without a cartera
+  const volverBtn=document.getElementById('volver-carteras-btn');
+  if(volverBtn) volverBtn.style.display=(noCartera&&isAdmin)?'':'none';
+  // Hide/show cartera badge
   const badge=document.getElementById('cartera-badge');
   if(badge) badge.style.display=noCartera?'none':'';
-  // Update user avatar initial
-  const avatarEl=document.getElementById('user-avatar-initial');
-  if(avatarEl&&sesion) avatarEl.textContent=(sesion.usuario||'?')[0].toUpperCase();
-  const roleEl=document.getElementById('header-role');
-  if(roleEl) roleEl.textContent=isAdmin?'Administrador':'Usuario';
 }
 function doLogin(){
   const u=document.getElementById('l-user').value.trim();
@@ -1594,7 +1422,6 @@ function doLogin(){
     GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
     err.classList.add('hidden');
     document.getElementById('login-screen').style.display='none';
-    document.body.style.background='var(--bg,#F4F6FB)';
     // Si el usuario tiene correo Google configurado, conectar Drive automáticamente
     if(user.correoGoogle && !GD.isConnected()){
       gdConectarParaUsuario(user);
@@ -1629,7 +1456,7 @@ function gdPedirConexionManual(user){
   if(!banner){
     banner=document.createElement('div');
     banner.id='gd-connect-banner';
-    banner.style.cssText='position:fixed;bottom:18px;right:18px;z-index:9999;background:var(--navy2);color:#fff;border-radius:12px;padding:14px 18px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:12.5px;line-height:1.5';
+    banner.style.cssText='position:fixed;bottom:18px;right:18px;z-index:9999;background:#1A3260;color:#fff;border-radius:12px;padding:14px 18px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:12.5px;line-height:1.5';
     carteraScreen.appendChild(banner);
   }
   banner.innerHTML=`
@@ -1659,15 +1486,9 @@ document.getElementById('l-pass').addEventListener('keydown',e=>{if(e.key==='Ent
 document.getElementById('l-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('l-pass').focus()});
 
 function _updateGDLoginBtn(){
+  // Show "Conectar Drive" if not connected, hide once connected
   const btn=document.getElementById('gd-login-btn');
-  const statusEl=document.getElementById('gd-status');
-  if(GD.isConnected()){
-    if(btn) btn.style.display='none';
-    if(statusEl) statusEl.style.display='inline-flex';
-  } else {
-    if(btn) btn.style.display='inline-flex';
-    if(statusEl) statusEl.style.display='none';
-  }
+  if(btn) btn.style.display=GD.isConnected()?'none':'inline-flex';
 }
 function showCarteraScreen(){
   const sesion=GLOBAL.sesion;if(!sesion)return;
@@ -1696,9 +1517,9 @@ function showCarteraScreen(){
     const totalCli=lsGet(`cc_${c.id}_clientes`,[]).length;
     return`<div onclick="entrarCartera('${esc(c.id)}')" style="cursor:pointer;border:2px solid #D0DAF0;
         border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;
-        align-items:center;transition:.15s;background:#FAFBFF"
+        align-items:center;transition:.15s;background:var(--surface2)"
         onmouseover="this.style.borderColor='#C9A84C';this.style.background='#FFFDF5'"
-        onmouseout="this.style.borderColor='#D0DAF0';this.style.background='#FAFBFF'">
+        onmouseout="this.style.borderColor='#D0DAF0';this.style.background='var(--surface2)'">
       <div>
         <div style="font-weight:800;font-size:15px;color:#0F2044">${esc(c.nombre)}</div>
         <div style="font-size:12px;color:#5A6E9A;margin-top:3px">${esc(c.descripcion||'Sin descripción')}</div>
@@ -1726,7 +1547,8 @@ function entrarCartera(carteraId){
   const badgeName=document.getElementById('cartera-badge-name');
   if(badge)badge.style.display='';
   if(badgeName)badgeName.textContent=CARTERA_NOMBRE;
-  document.getElementById('header-user').textContent=GLOBAL.sesion.usuario;
+  document.getElementById('header-user').textContent=
+    GLOBAL.sesion.usuario+(GLOBAL.sesion.rol==='admin'?' (Admin)':'');
   applyRoleUI();
   const btn=document.querySelector('.nav-btn[data-tab="dashboard"]');
   if(btn)switchTab('dashboard',btn);
@@ -1739,7 +1561,8 @@ function entrarAdmin(){
   document.getElementById('app').classList.remove('hidden');
   const badge=document.getElementById('cartera-badge');
   if(badge)badge.style.display='none';
-  document.getElementById('header-user').textContent=GLOBAL.sesion.usuario;
+  document.getElementById('header-user').textContent=
+    GLOBAL.sesion.usuario+' (Admin)';
   applyRoleUI();
   const btn=document.querySelector('.nav-btn[data-tab="usuarios"]');
   if(btn)switchTab('usuarios',btn);
@@ -1783,16 +1606,10 @@ function switchTab(id,btn){
   if(id==='usuarios'&&(sesion&&sesion.rol)!=='admin')return;
   if(id!=='usuarios'&&!CARTERA_ID)return;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
-  if(btn)btn.classList.add('active');
-  else{const b=document.querySelector(`.nav-item[data-tab="${id}"]`);if(b)b.classList.add('active');}
-  const tt=document.getElementById('topbar-title');
-  const lbls={dashboard:'Dashboard',clientes:'Clientes',creditos:'Créditos',cobros:'Cobros',caja:'Caja',analisis:'Análisis',datos:'Datos',usuarios:'Usuarios'};
-  if(tt)tt.textContent=lbls[id]||id;
-  // Close sidebar on mobile after nav
-  if(window.innerWidth<=768){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebar-overlay');if(sb)sb.classList.remove('mobile-open');if(ov)ov.classList.remove('show');}
+  if(id==='caja') _cajaSubTab='resumen';
   if(id==='analisis') _analisisSubTab='resumen';
   if(id==='cobros') _cobrosSubTab='cobros';
   if(id==='clientes') _clientesSubTab='lista';
@@ -1803,26 +1620,12 @@ function switchTab(id,btn){
     document.getElementById('tab-'+id).innerHTML=
       '<div style="padding:40px;text-align:center">'
       +'<div style="font-size:36px;margin-bottom:14px">⚠️</div>'
-      +'<div style="font-weight:700;color:var(--err);font-size:16px;margin-bottom:8px">Error al cargar esta sección</div>'
+      +'<div style="font-weight:700;color:#C0392B;font-size:16px;margin-bottom:8px">Error al cargar esta sección</div>'
       +'<div style="font-family:monospace;font-size:12px;background:#FFF0F0;padding:12px;border-radius:8px;color:#8B0000;max-width:600px;margin:0 auto;text-align:left">'
       +escHtml(e.message||String(e))+'</div>'
       +'<div style="margin-top:16px;font-size:12px;color:#888">Abre la consola del navegador (F12) para más detalles.<br>'
       +'Si el problema persiste, usa las opciones de recuperación en la pantalla de login.</div>'
       +'</div>';
-  }
-}
-function toggleSidebar(){
-  const sb=document.getElementById('sidebar');
-  const ov=document.getElementById('sidebar-overlay');
-  if(!sb)return;
-  if(window.innerWidth<=768){
-    sb.classList.toggle('mobile-open');
-    if(ov)ov.classList.toggle('show');
-  } else {
-    sb.classList.toggle('collapsed');
-    const arrow=document.getElementById('sidebar-arrow');
-    if(arrow)arrow.setAttribute('d',sb.classList.contains('collapsed')?'M3.5 1L7.5 5L3.5 9':'M6.5 1L2.5 5L6.5 9');
-    lsSet('cc_sidebar_collapsed',sb.classList.contains('collapsed'));
   }
 }
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -2070,22 +1873,6 @@ function applyDashboardFiltro(){
       ${statCard('🔴','Total Valor en Mora',fmt(s.totalMora),'#7B2D8B')}
     </div>`;
 }
-function showSkeletonDashboard(){
-  const el=document.getElementById('tab-dashboard');
-  if(!el)return;
-  el.innerHTML=`
-    <div class="section-title">Dashboard General</div>
-    <div class="section-sub" style="margin-bottom:24px">${new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
-    <div class="stat-grid">
-      ${[1,2,3].map(()=>'<div class="skeleton skeleton-card"></div>').join('')}
-    </div>
-    <div class="stat-grid">
-      ${[1,2,3].map(()=>'<div class="skeleton skeleton-card"></div>').join('')}
-    </div>
-    <div style="margin-top:20px">
-      ${[1,2,3,4,5].map(()=>'<div class="skeleton skeleton-row" style="width:${Math.round(60+Math.random()*35)}%"></div>').join('')}
-    </div>`;
-}
 function renderDashboard(){
   const h=hoy();
   const s=computeDashboardStats('',h);
@@ -2110,7 +1897,7 @@ function renderDashboard(){
 
     <div class="card" style="margin-bottom:20px">
       <div class="card-body" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-right:4px">🗓 Filtrar por período:</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-right:4px">🗓 Filtrar por período:</div>
         <div class="field" style="margin-bottom:0;min-width:160px">
           <label>Fecha Inicio</label>
           <input type="date" id="dash-desde" placeholder="Desde (vacío = todo)" oninput="applyDashboardFiltro()" style="padding:7px 11px"/>
@@ -2257,7 +2044,7 @@ function renderClientes(){
           <div style="padding:16px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff);
                       display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div>
-              <div style="font-size:15px;font-weight:800;color:var(--navy)">👤 Lista de Clientes</div>
+              <div style="font-size:15px;font-weight:800;color:var(--text)">👤 Lista de Clientes</div>
               <div style="font-size:11.5px;color:var(--muted)" id="cli-count">${DB.clientes.length} clientes registrados</div>
             </div>
             <div style="display:flex;gap:8px">
@@ -2268,7 +2055,7 @@ function renderClientes(){
 
           <div id="import-clientes-panel" class="hidden" style="margin:0;padding:16px 22px;background:#fffbec;border-bottom:1px solid var(--border)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <div style="font-size:13px;font-weight:700;color:var(--navy)">📥 Importación Masiva de Clientes</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">📥 Importación Masiva de Clientes</div>
               <button class="btn btn-secondary btn-sm" onclick="toggleImportClientes(true)">✕ Cerrar</button>
             </div>
             <div class="info-box info-box-note" style="font-size:12px;margin-bottom:10px">
@@ -2286,7 +2073,7 @@ function renderClientes(){
           </div>
 
           <div id="form-cliente" class="hidden" style="padding:16px 22px;border-bottom:1px solid var(--border);background:#f9fbff">
-            <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px" id="form-cliente-title">Nuevo Cliente</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px" id="form-cliente-title">Nuevo Cliente</div>
             <div class="grid2">
               <div class="field"><label>Nombre completo *</label><input id="fc-nombre" type="text"/></div>
               <div class="field"><label>Cédula / NIT *</label><input id="fc-cedula" type="text"/></div>
@@ -2313,7 +2100,7 @@ function renderClientes(){
         <!-- ════ PANEL: SCORE CREDITICIO ════ -->
         <div id="cli-panel-score" style="display:${_clientesSubTab==='score'?'block':'none'}">
           <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#fffff5,#fff)">
-            <div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:2px">🏆 Score Crediticio de Clientes</div>
+            <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px">🏆 Score Crediticio de Clientes</div>
             <div style="font-size:11.5px;color:var(--muted)">Calificación 0.0 a 5.0 basada en hábito de pago, volumen, historial y mora</div>
           </div>
           <div id="cli-score-body" style="padding:0">
@@ -2456,7 +2243,7 @@ function previsualizarImportClientes(input){
       importClientesPending=nuevos;
       const preview=nuevos.slice(0,5).map(c=>`<tr><td>${esc(c.nombre)}</td><td>${esc(c.cedula)}</td><td>${esc(c.telefono)}</td><td>${esc(c.email)}</td></tr>`).join('');
       prev.innerHTML=`<div style="margin-top:10px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">Vista previa (primeros ${Math.min(5,nuevos.length)} de ${nuevos.length}):</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Vista previa (primeros ${Math.min(5,nuevos.length)} de ${nuevos.length}):</div>
         <div class="tbl-wrap" style="max-height:200px"><table>
           <thead><tr><th>Nombre</th><th>Cédula</th><th>Teléfono</th><th>Email</th></tr></thead>
           <tbody>${preview}${nuevos.length>5?`<tr><td colspan="4" style="text-align:center;font-style:italic;color:var(--muted)">... y ${nuevos.length-5} más</td></tr>`:''}</tbody>
@@ -2975,13 +2762,13 @@ function buildCreditoRows(lista,h){
       <td><div class="row-actions" style="flex-wrap:wrap;gap:4px;position:relative">
         <button class="btn btn-secondary btn-sm" onclick="toggleTablaAmort(${c.id})">${viewCreditoId===c.id?'▲ Cerrar':'📋 Ver'}</button>
         <div style="position:relative;display:inline-block">
-          <button class="btn btn-secondary btn-sm" style="background:var(--navy2);color:#fff;border-color:var(--navy2)" onclick="toggleCreditoMenu(${c.id},event)">⚙ Acciones ▾</button>
+          <button class="btn btn-secondary btn-sm" style="background:#1A3260;color:#fff;border-color:#1A3260" onclick="toggleCreditoMenu(${c.id},event)">⚙ Acciones ▾</button>
           <div id="cmenu-${c.id}" style="display:none;position:absolute;right:0;top:110%;z-index:999;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 4px 18px #0002;min-width:160px;padding:5px 0">
-            <button onclick="exportResumenCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--navy)">📄 Resumen</button>
-            <button onclick="exportContratoCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--warn)">📜 Contrato</button>
+            <button onclick="exportResumenCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text)">📄 Resumen</button>
+            <button onclick="exportContratoCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#B07D12">📜 Contrato</button>
             <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-            <button onclick="editarCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--ok)">✏️ Editar</button>
-            <button onclick="eliminarCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--err)">🗑 Eliminar</button>
+            <button onclick="editarCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#1A7A4A">✏️ Editar</button>
+            <button onclick="eliminarCredito(${c.id});toggleCreditoMenu(${c.id})" style="display:block;width:100%;text-align:left;padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:#C0392B">🗑 Eliminar</button>
           </div>
         </div>
       </div></td></tr>`;
@@ -3104,11 +2891,11 @@ function renderCreditos(){
           <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
             <div style="min-width:200px;max-width:260px">
               <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">
-                Valor de Cuota <span style="text-transform:none;font-weight:600;color:var(--navy);opacity:.7">(capital + interés)</span>
+                Valor de Cuota <span style="text-transform:none;font-weight:600;color:var(--text);opacity:.7">(capital + interés)</span>
                 <span style="font-size:9px;font-weight:400;color:var(--mora);display:block;text-transform:none;letter-spacing:0;margin-top:1px">Editable: al cambiar recalcula la tasa</span>
               </div>
               <input id="frc-cuota-val" type="number" min="0" step="1"
-                style="font-size:15px;font-weight:800;color:var(--navy);border:1.5px solid var(--mora);border-radius:8px;padding:7px 11px;width:100%;background:#fff"
+                style="font-size:15px;font-weight:800;color:var(--text);border:1.5px solid var(--mora);border-radius:8px;padding:7px 11px;width:100%;background:#fff"
                 oninput="onFrcCuotaChange()" placeholder="Se calcula automáticamente"/>
             </div>
             <div id="frc-preview-items" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end"></div>
@@ -3352,7 +3139,7 @@ function mostrarEstadoCarpeta(){
   const el = document.getElementById('carpeta-estado');
   if(!el) return;
   if(nombre){
-    el.innerHTML=`<span style="color:var(--ok);font-weight:700">📂 ${nombre}</span> <span style="font-size:11px;color:var(--muted)">${_carpetaRaiz?'(activa en esta sesión)':'(requiere reconectar)'}</span>`;
+    el.innerHTML=`<span style="color:#1A7A4A;font-weight:700">📂 ${nombre}</span> <span style="font-size:11px;color:var(--muted)">${_carpetaRaiz?'(activa en esta sesión)':'(requiere reconectar)'}</span>`;
   } else {
     el.innerHTML=`<span style="color:var(--muted);font-size:12px">Sin carpeta configurada — los archivos se descargarán normalmente</span>`;
   }
@@ -3406,7 +3193,7 @@ function mostrarToastGuardado(nombre, carpeta){
   if(!toast){
     toast = document.createElement('div');
     toast.id = 'save-toast';
-    toast.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--ok);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px #0004;max-width:340px;transition:opacity 0.4s';
+    toast.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;background:#1A7A4A;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px #0004;max-width:340px;transition:opacity 0.4s';
     document.body.appendChild(toast);
   }
   toast.innerHTML=`✅ Guardado en <strong>${carpeta}/</strong><br><span style="font-size:11px;opacity:0.85">${nombre}</span>`;
@@ -3455,7 +3242,7 @@ function editarCredito(id){
     overlay.innerHTML=`
       <div style="background:#fff;border-radius:16px;padding:28px 28px 22px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px #0003">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-          <span style="font-weight:800;font-size:17px;color:var(--navy)">✏️ Editar Crédito #${id}</span>
+          <span style="font-weight:800;font-size:17px;color:var(--text)">✏️ Editar Crédito #${id}</span>
           <button onclick="document.getElementById('edit-cred-overlay').remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
         </div>
         <div class="grid3" style="gap:14px">
@@ -3487,7 +3274,7 @@ function editarCredito(id){
           <div class="field col-span2"><label>Concepto</label>
             <input id="erc-concepto" type="text" value="${escHtml(c.concepto||'')}"/></div>
         </div>
-        <div id="erc-preview-cuota" style="margin:10px 0 0 0;padding:10px 16px;background:#f0f5ff;border-radius:8px;font-size:12.5px;color:var(--navy);display:none"></div>
+        <div id="erc-preview-cuota" style="margin:10px 0 0 0;padding:10px 16px;background:#f0f5ff;border-radius:8px;font-size:12.5px;color:var(--text);display:none"></div>
         <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end">
           <button class="btn btn-secondary" onclick="document.getElementById('edit-cred-overlay').remove()">Cancelar</button>
           <button class="btn btn-primary" onclick="guardarEdicionCredito(${id})">💾 Guardar Cambios</button>
@@ -3681,7 +3468,7 @@ function previsualizarImportCreditos(input){
       importCreditosPending=nuevos;
       const preview=nuevos.slice(0,5).map(c=>`<tr><td>${esc(c.clienteNombre)}</td><td>${fmt(c.monto)}</td><td>${c.tasaMensual}%</td><td>${c.numeroCuotas}</td><td>${c.fechaDesembolso}</td></tr>`).join('');
       prev.innerHTML=`<div style="margin-top:10px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">Vista previa (primeros ${Math.min(5,nuevos.length)} de ${nuevos.length}):</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Vista previa (primeros ${Math.min(5,nuevos.length)} de ${nuevos.length}):</div>
         <div class="tbl-wrap" style="max-height:200px"><table>
           <thead><tr><th>Cliente</th><th>Monto</th><th>Tasa</th><th>Cuotas</th><th>Desembolso</th></tr></thead>
           <tbody>${preview}${nuevos.length>5?`<tr><td colspan="5" style="text-align:center;font-style:italic;color:var(--muted)">... y ${nuevos.length-5} más</td></tr>`:''}</tbody>
@@ -3753,19 +3540,19 @@ function buildPagoRows(lista,h){
     return`<tr>
       <td style="white-space:nowrap">${fmtDate(p.fecha)}</td>
       <td><strong>${esc((cli&&cli.nombre)||'—')}</strong></td>
-      <td style="text-align:center;color:var(--navy);font-weight:700">#${p.creditoId||'—'}</td>
+      <td style="text-align:center;color:var(--text);font-weight:700">#${p.creditoId||'—'}</td>
       <td style="text-align:center">#${p.numeroCuota}${esParcial?` <span class="badge badge-yellow" style="font-size:9px">parcial</span>`:''}</td>
-      <td style="text-align:right;color:var(--navy2);font-weight:700">${fmt(capPagado)}</td>
-      <td style="text-align:right;color:var(--warn);font-weight:700">${fmt(intTotal)}</td>
+      <td style="text-align:right;color:#1A3260;font-weight:700">${fmt(capPagado)}</td>
+      <td style="text-align:right;color:#B07D12;font-weight:700">${fmt(intTotal)}</td>
       <td style="text-align:right;font-weight:800;color:var(--ok)">${fmt(p.monto)}</td>
       <td>${esc(p.cobrador)}</td>
       <td style="color:var(--muted);font-size:11.5px">${esc(p.observacion)||'—'}</td>
-      <td style="font-size:10.5px;color:var(--navy2)" title="${p._audit?'Registrado: '+new Date(p._audit.fecha).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}):'Sin registro'}">
+      <td style="font-size:10.5px;color:#1A3260" title="${p._audit?'Registrado: '+new Date(p._audit.fecha).toLocaleString('es-CO',{dateStyle:'short',timeStyle:'short'}):'Sin registro'}">
         ${p._audit?'👤 '+esc(p._audit.usuario):'—'}
       </td>
       <td style="white-space:nowrap;display:flex;gap:4px">
-        <button class="btn btn-secondary btn-sm" style="background:var(--ok);color:#fff;border-color:var(--ok)" onclick="editarCobro(${p.id})" title="Editar cobro">✏️</button>
-        <button class="btn btn-secondary btn-sm" style="background:var(--navy2);color:#fff;border-color:var(--navy2)" onclick="exportReciboPago(${p.id})" title="Exportar recibo">🧾</button>
+        <button class="btn btn-secondary btn-sm" style="background:#1A7A4A;color:#fff;border-color:#1A7A4A" onclick="editarCobro(${p.id})" title="Editar cobro">✏️</button>
+        <button class="btn btn-secondary btn-sm" style="background:#1A3260;color:#fff;border-color:#1A3260" onclick="exportReciboPago(${p.id})" title="Exportar recibo">🧾</button>
         <button class="btn btn-danger btn-sm" onclick="eliminarPago(${p.id})">🗑</button>
       </td></tr>`;
   }).join('');
@@ -3816,7 +3603,7 @@ function renderCobros(){
         <nav style="display:flex;flex-direction:column;gap:3px;padding:10px 0">
           <button id="cob-stab-cobros" onclick="setCobrosSubTab('cobros')"
             style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;border:none;cursor:pointer;
-                   border-left:3px solid var(--navy);background:var(--gold);color:var(--navy);font-weight:700;
+                   border-left:3px solid var(--navy);background:var(--gold);color:var(--text);font-weight:700;
                    font-size:12px;font-family:inherit;text-align:left;border-radius:0 8px 8px 0;margin-right:4px">
             <span style="font-size:16px">💳</span>
             <span style="display:flex;flex-direction:column;gap:1px">
@@ -3878,7 +3665,7 @@ function renderCobros(){
           <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff);
                       display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <div>
-              <div style="font-size:15px;font-weight:800;color:var(--navy)">💳 Registro de Cobros</div>
+              <div style="font-size:15px;font-weight:800;color:var(--text)">💳 Registro de Cobros</div>
               <div style="font-size:11.5px;color:var(--muted)">Pagos parciales y moras se recalculan automáticamente</div>
             </div>
             <button class="btn btn-secondary btn-sm" onclick="toggleImportCobros()">📥 Importar Cobros Excel</button>
@@ -3887,7 +3674,7 @@ function renderCobros(){
           <!-- Import panel -->
           <div id="import-cobros-panel" class="hidden" style="margin:0;padding:16px 22px;background:#fffbec;border-bottom:1px solid var(--border)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <div style="font-size:13px;font-weight:700;color:var(--navy)">📥 Importación Masiva de Cobros</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text)">📥 Importación Masiva de Cobros</div>
               <button class="btn btn-secondary btn-sm" onclick="toggleImportCobros(true)">✕ Cerrar</button>
             </div>
             <div class="info-box info-box-note" style="font-size:12px;margin-bottom:10px">
@@ -3896,7 +3683,7 @@ function renderCobros(){
               <strong>Fecha:</strong> usar formato <code>DD/MM/AAAA</code> (ej: <code>31/10/2025</code>) — si la celda es tipo fecha en Excel, se leerá automáticamente.
             </div>
             <div style="margin-bottom:10px">
-              <button class="btn btn-secondary btn-sm" style="background:var(--ok);color:#fff;border-color:var(--ok);font-size:12px;padding:7px 14px" onclick="descargarPlantillaCobros()">
+              <button class="btn btn-secondary btn-sm" style="background:#1A7A4A;color:#fff;border-color:#1A7A4A;font-size:12px;padding:7px 14px" onclick="descargarPlantillaCobros()">
                 📋 Descargar plantilla Excel de ejemplo
               </button>
               <span style="font-size:11px;color:var(--muted);margin-left:8px">Incluye tus créditos activos como referencia</span>
@@ -3944,7 +3731,7 @@ function renderCobros(){
             <div style="padding:10px 16px 10px 22px;background:var(--bg);border-bottom:1px solid var(--border);
                         display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
               <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:13px;font-weight:700;color:var(--navy)">📋 Historial de Cobros</span>
+                <span style="font-size:13px;font-weight:700;color:var(--text)">📋 Historial de Cobros</span>
                 <span id="cobros-count" style="font-size:11px;color:var(--muted)"></span>
               </div>
               <button class="btn btn-secondary btn-sm" onclick="['cobro-q','cobro-fdesde','cobro-fhasta','cobro-mmin','cobro-mmax'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});filtrarCobros()">↺ Limpiar filtros</button>
@@ -3964,16 +3751,16 @@ function renderCobros(){
                 <input type="number" id="cobro-mmax" placeholder="Sin límite" style="padding:6px 10px;font-size:12px;width:120px" oninput="filtrarCobros()"/></div>
             </div>
             <div style="padding:5px 16px;background:#EEF2FF;border-bottom:1px solid var(--border);display:flex;gap:16px;font-size:10.5px;flex-wrap:wrap;color:var(--muted)">
-              <span><span style="display:inline-block;width:9px;height:9px;background:var(--navy2);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital = amortización del préstamo</span>
+              <span><span style="display:inline-block;width:9px;height:9px;background:#1A3260;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital = amortización del préstamo</span>
               <span><span style="display:inline-block;width:9px;height:9px;background:#B07D12;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Intereses = intereses + mora cobrados</span>
-              <span><span style="display:inline-block;width:9px;height:9px;background:var(--ok);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Total = monto recibido</span>
+              <span><span style="display:inline-block;width:9px;height:9px;background:#1A7A4A;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Total = monto recibido</span>
             </div>
             <div class="tbl-wrap" style="overflow-y:auto;max-height:580px;overflow-x:auto">
               <table style="min-width:900px"><thead><tr>
                 <th>Fecha</th><th>Cliente</th><th style="text-align:center">Crédito</th><th style="text-align:center">Cuota</th>
-                <th style="text-align:right;color:var(--navy2)">💼 Capital</th>
-                <th style="text-align:right;color:var(--warn)">📈 Intereses</th>
-                <th style="text-align:right;color:var(--ok)">💵 Total</th>
+                <th style="text-align:right;color:#1A3260">💼 Capital</th>
+                <th style="text-align:right;color:#B07D12">📈 Intereses</th>
+                <th style="text-align:right;color:#1A7A4A">💵 Total</th>
                 <th>Cobrador</th><th>Obs.</th><th>Registrado por</th><th style="text-align:center">Acción</th>
               </tr></thead><tbody id="cobros-body">
                 ${buildPagoRows([...DB.pagos].reverse(),h)}
@@ -3985,7 +3772,7 @@ function renderCobros(){
         <!-- ════ PANEL: REFINANCIACIÓN ════ -->
         <div id="cob-panel-refinanciacion" style="display:none">
           <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#fff8f0,#fff)">
-            <div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:2px">🔄 Refinanciación y Reestructuración</div>
+            <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px">🔄 Refinanciación y Reestructuración</div>
             <div style="font-size:11.5px;color:var(--muted)">Gestiona créditos en dificultad: extiende el plazo, congela intereses o consolida la deuda en un nuevo crédito</div>
           </div>
           <div id="cob-refinanciacion-body" style="padding:20px 24px">
@@ -4001,7 +3788,7 @@ function renderCobros(){
         <!-- ════ PANEL: PROYECCIÓN (movido desde Caja) ════ -->
         <div id="cob-panel-proyeccion" style="display:none">
           <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f0f5ff,#fff)">
-            <div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:2px">📅 Proyección de Cobros</div>
+            <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px">📅 Proyección de Cobros</div>
             <div style="font-size:11.5px;color:var(--muted)">Flujo esperado de ingresos según calendarios de pago activos</div>
           </div>
           <div id="cob-proyeccion-body" style="padding:20px 24px">
@@ -4089,7 +3876,7 @@ function previsualizarImportCobros(input){
       importCobrosPending=nuevos;
       const preview=nuevos.slice(0,5).map(p=>`<tr><td>${esc(p.clienteNombre)}</td><td>#${p.numeroCuota}</td><td>${fmt(p.monto)}</td><td>${p.fecha}</td><td>${esc(p.cobrador)}</td></tr>`).join('');
       prev.innerHTML=`<div style="margin-top:10px">
-        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px">Vista previa (primeros ${Math.min(5,nuevos.length)} de ${nuevos.length}):</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Vista previa (primeros ${Math.min(5,nuevos.length)} de ${nuevos.length}):</div>
         <div class="tbl-wrap" style="max-height:200px"><table>
           <thead><tr><th>Cliente</th><th>Cuota</th><th>Monto</th><th>Fecha</th><th>Cobrador</th></tr></thead>
           <tbody>${preview}${nuevos.length>5?`<tr><td colspan="5" style="text-align:center;font-style:italic;color:var(--muted)">... y ${nuevos.length-5} más</td></tr>`:''}</tbody>
@@ -4225,7 +4012,7 @@ function onCobroCreditoChange(){
       <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border)">
         <div style="padding:12px 16px;border-right:1px solid var(--border)">
           <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Saldo Capital</div>
-          <div style="font-size:18px;font-weight:800;color:var(--navy)">${fmt(saldo)}</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text)">${fmt(saldo)}</div>
         </div>
         <div style="padding:12px 16px;border-right:1px solid var(--border)">
           <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Mora Acumulada</div>
@@ -4233,7 +4020,7 @@ function onCobroCreditoChange(){
         </div>
         <div style="padding:12px 16px;border-right:1px solid var(--border)">
           <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Cuotas Pagadas</div>
-          <div style="font-size:18px;font-weight:800;color:var(--navy)">${pagadas} / ${cred.numeroCuotas}</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text)">${pagadas} / ${cred.numeroCuotas}</div>
         </div>
         <div style="padding:12px 16px">
           <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Mora Diaria</div>
@@ -4244,8 +4031,8 @@ function onCobroCreditoChange(){
       <!-- Liquidación anticipada -->
       <div style="padding:14px 18px;background:linear-gradient(135deg,#f0faf3 0%,#e8f5ec 100%)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:13px;font-weight:800;color:var(--ok)">⚡ Liquidación Anticipada del Crédito</span>
-          <span style="font-size:11px;color:var(--ok);background:#C8EDD4;border-radius:20px;padding:2px 10px">Sin intereses futuros</span>
+          <span style="font-size:13px;font-weight:800;color:#1A7A4A">⚡ Liquidación Anticipada del Crédito</span>
+          <span style="font-size:11px;color:#1A7A4A;background:#C8EDD4;border-radius:20px;padding:2px 10px">Sin intereses futuros</span>
         </div>
 
         <!-- Fila de desglose editable -->
@@ -4253,17 +4040,17 @@ function onCobroCreditoChange(){
 
           <!-- Cuota actual con interés editable -->
           <div style="background:#fff;border:1px solid #B8DECA;border-radius:8px;padding:12px 14px">
-            <div style="font-size:10px;font-weight:700;color:var(--ok);text-transform:uppercase;margin-bottom:6px">Cuota #${cuotaActualFila.cuota} actual</div>
+            <div style="font-size:10px;font-weight:700;color:#1A7A4A;text-transform:uppercase;margin-bottom:6px">Cuota #${cuotaActualFila.cuota} actual</div>
             <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Capital (fijo)</div>
-            <div style="font-size:14px;font-weight:800;color:var(--navy2);margin-bottom:8px">${fmt(Math.round(cuotaActualFila.capitalCuota))}</div>
+            <div style="font-size:14px;font-weight:800;color:#1A3260;margin-bottom:8px">${fmt(Math.round(cuotaActualFila.capitalCuota))}</div>
             <div style="font-size:10px;color:var(--muted);margin-bottom:3px">
-              Interés corriente <span style="color:var(--warn);font-weight:700">(editable)</span>
+              Interés corriente <span style="color:#B07D12;font-weight:700">(editable)</span>
               <span style="font-size:9px;color:var(--muted)"> · Base: ${fmt(Math.round(cuotaActualFila.interesesCorrientes))}</span>
             </div>
             <input id="liq-int-cuota-${cred.id}" type="number" min="0"
               value="${Math.round(cuotaActualFila.interesesCorrientes)}"
               oninput="recalcLiquidacion(${cred.id})"
-              style="width:100%;padding:6px 10px;border:1.5px solid #B07D12;border-radius:6px;font-size:13px;font-weight:700;color:var(--warn);background:#FEF9EC;margin-bottom:6px"/>
+              style="width:100%;padding:6px 10px;border:1.5px solid #B07D12;border-radius:6px;font-size:13px;font-weight:700;color:#B07D12;background:#FEF9EC;margin-bottom:6px"/>
             ${cuotaActualFila.moraTotal>0?`
             <div style="font-size:10px;color:var(--muted);margin-bottom:3px">
               Mora <span style="color:var(--mora);font-weight:700">(editable)</span>
@@ -4279,22 +4066,22 @@ function onCobroCreditoChange(){
           <!-- Capital futuro con interés adicional editable -->
           ${capitalFuturo>0?`
           <div style="background:#fff;border:1px solid #B8DECA;border-radius:8px;padding:12px 14px">
-            <div style="font-size:10px;font-weight:700;color:var(--ok);text-transform:uppercase;margin-bottom:6px">Capital ${pendientes.length-1} cuota(s) futura(s)</div>
+            <div style="font-size:10px;font-weight:700;color:#1A7A4A;text-transform:uppercase;margin-bottom:6px">Capital ${pendientes.length-1} cuota(s) futura(s)</div>
             <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Capital pendiente (fijo)</div>
-            <div style="font-size:14px;font-weight:800;color:var(--navy2);margin-bottom:8px">${fmt(capitalFuturo)}</div>
+            <div style="font-size:14px;font-weight:800;color:#1A3260;margin-bottom:8px">${fmt(capitalFuturo)}</div>
             <div style="font-size:10px;color:var(--muted);margin-bottom:3px">
-              Interés adicional sobre capital futuro <span style="color:var(--warn);font-weight:700">(editable)</span>
+              Interés adicional sobre capital futuro <span style="color:#B07D12;font-weight:700">(editable)</span>
               <span style="font-size:9px;color:var(--muted)"> · 0 = sin interés</span>
             </div>
             <input id="liq-int-futuro-${cred.id}" type="number" min="0" value="0"
               oninput="recalcLiquidacion(${cred.id})"
               placeholder="0 — descuento o cargo extra"
-              style="width:100%;padding:6px 10px;border:1.5px solid #B07D12;border-radius:6px;font-size:13px;font-weight:700;color:var(--warn);background:#FEF9EC"/>
+              style="width:100%;padding:6px 10px;border:1.5px solid #B07D12;border-radius:6px;font-size:13px;font-weight:700;color:#B07D12;background:#FEF9EC"/>
             <div style="font-size:9px;color:var(--muted);margin-top:4px">Cuotas ${pendientes[1].cuota} a ${pendientes[pendientes.length-1].cuota}</div>
           </div>`:''}
 
           <!-- Total dinámico -->
-          <div id="liq-total-card-${cred.id}" style="background:var(--ok);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center">
+          <div id="liq-total-card-${cred.id}" style="background:#1A7A4A;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center">
             <div style="font-size:10px;font-weight:700;color:#C8EDD4;text-transform:uppercase;margin-bottom:4px">Total a cobrar hoy</div>
             <div id="liq-total-val-${cred.id}" style="font-size:20px;font-weight:900;color:#fff">${fmt(montoLiquidacion)}</div>
             <div id="liq-total-sub-${cred.id}" style="font-size:10px;color:#C8EDD4;margin-top:3px">Crédito queda ✅ saldado</div>
@@ -4302,7 +4089,7 @@ function onCobroCreditoChange(){
         </div>
 
         <!-- Nota de ajuste -->
-        <div id="liq-ajuste-nota-${cred.id}" style="display:none;margin-bottom:10px;padding:7px 12px;background:#FEF9EC;border:1px solid #B07D12;border-radius:7px;font-size:11.5px;color:var(--warn);font-weight:600"></div>
+        <div id="liq-ajuste-nota-${cred.id}" style="display:none;margin-bottom:10px;padding:7px 12px;background:#FEF9EC;border:1px solid #B07D12;border-radius:7px;font-size:11.5px;color:#B07D12;font-weight:600"></div>
 
         <button id="liq-btn-${cred.id}" class="btn btn-success" style="width:100%;padding:12px;font-size:14px;font-weight:700;letter-spacing:0.3px" onclick="confirmarLiquidacion(${cred.id})">
           ⚡ Liquidar crédito — Cobrar ${fmt(montoLiquidacion)} y cerrar
@@ -4539,10 +4326,10 @@ function editarCobro(id){
     overlay.innerHTML=`
       <div style="background:#fff;border-radius:16px;padding:28px 28px 22px;max-width:520px;width:100%;box-shadow:0 8px 40px #0003">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-          <span style="font-weight:800;font-size:17px;color:var(--navy)">✏️ Editar Cobro #${id}</span>
+          <span style="font-weight:800;font-size:17px;color:var(--text)">✏️ Editar Cobro #${id}</span>
           <button onclick="document.getElementById('edit-cobro-overlay').remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
         </div>
-        <div style="background:#EEF2FF;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:var(--navy)">
+        <div style="background:#EEF2FF;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12.5px;color:var(--text)">
           <strong>${esc((cli&&cli.nombre)||'—')}</strong> · Crédito #${p.creditoId} · Cuota #${p.numeroCuota}
         </div>
         <div class="grid3" style="gap:14px">
@@ -4613,7 +4400,7 @@ function renderEstadoInline(){
     <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff);
                 display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div>
-        <div style="font-size:15px;font-weight:800;color:var(--navy)">📋 Estado de Cuenta</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">📋 Estado de Cuenta</div>
         <div style="font-size:11.5px;color:var(--muted)">Extracto con recálculo real — refleja pagos parciales y mora acumulada</div>
       </div>
     </div>
@@ -4799,7 +4586,7 @@ function renderEstadoGlobal(){
       <td style="font-weight:700;text-align:right">${fmt(cred.monto)}</td>
       <td style="text-align:right;color:var(--ok);font-weight:700">${fmt(totalPagado)}</td>
       <td style="text-align:right">
-        <div style="font-weight:700;color:var(--navy)">${fmt(capPagado)}</div>
+        <div style="font-weight:700;color:var(--text)">${fmt(capPagado)}</div>
         <div style="font-size:10px;color:var(--muted)">${pctCap}% del capital</div>
       </td>
       <td style="text-align:right">
@@ -4877,7 +4664,7 @@ function renderEstadoGlobal(){
           <tbody>${rows}</tbody>
           <tfoot>
             <tr style="background:var(--bg);font-weight:800;border-top:2px solid var(--border)">
-              <td colspan="4" style="font-weight:800;color:var(--navy)">TOTALES</td>
+              <td colspan="4" style="font-weight:800;color:var(--text)">TOTALES</td>
               <td style="text-align:right;font-weight:800">${fmt(gTotalCapital)}</td>
               <td style="text-align:right;font-weight:800;color:var(--ok)">${fmt(gTotalPagado)}</td>
               <td style="text-align:right;font-weight:800">${fmt(gTotalCapPagado)}<div style="font-size:10px;font-weight:600;color:var(--muted)">${gPctCap}%</div></td>
@@ -4934,7 +4721,7 @@ function renderCierresLista(){
   var meses=Object.keys(cierres).sort();
   if(!meses.length){ el.innerHTML='<span style="font-size:11px;color:var(--muted)">Sin fechas de cierre configuradas aun</span>'; return; }
   el.innerHTML=meses.map(function(m){
-    return '<span style="display:inline-flex;align-items:center;gap:5px;background:#E8EDF8;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600">'
+    return '<span style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600">'
       +m+' <span style="opacity:.5">→</span> <strong>'+fmtDate(cierres[m])+'</strong>'
       +'<button onclick="eliminarCierre(\''+m+'\')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:14px;line-height:1;padding:0 2px">×</button>'
       +'</span>';
@@ -4979,14 +4766,14 @@ function renderCapitalDespliegue(){
     var lbl=p.pct>=75?'Alto despliegue':p.pct>=40?'Parcial':'Subutilizado';
     var barA='<div style="display:flex;height:14px;border-radius:20px;overflow:hidden;min-width:120px">'
       +(p.pct>0?'<div style="width:'+p.pct+'%;background:#C9A84C" title="En creditos: '+fmt(p.capEnCreditos)+'"></div>':'')
-      +((100-p.pct)>0?'<div style="width:'+(100-p.pct)+'%;background:var(--navy2)" title="En caja: '+fmt(p.capEnCaja)+'"></div>':'')
+      +((100-p.pct)>0?'<div style="width:'+(100-p.pct)+'%;background:#1A3260" title="En caja: '+fmt(p.capEnCaja)+'"></div>':'')
       +'</div>';
     return '<tr>'
       +'<td style="font-weight:700">'+p.mes+'</td>'
       +'<td style="font-size:11px;color:var(--muted)">'+fmtDate(p.fechaCierre)+'</td>'
       +'<td style="text-align:right;font-weight:700;color:#C9A84C">'+fmt(p.capEnCreditos)+'</td>'
-      +'<td style="text-align:right;font-weight:700;color:var(--navy2)">'+fmt(p.capEnCaja)+'</td>'
-      +'<td style="text-align:right;font-weight:700;color:var(--navy)">'+fmt(p.total)+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:#1A3260">'+fmt(p.capEnCaja)+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:var(--text)">'+fmt(p.total)+'</td>'
       +'<td style="text-align:center"><span style="font-size:15px;font-weight:800;color:'+c+'">'+p.pct+'%</span></td>'
       +'<td style="font-size:10.5px;color:'+c+';font-weight:700">'+lbl+'</td>'
       +'<td style="min-width:130px">'+barA+'</td>'
@@ -4996,7 +4783,7 @@ function renderCapitalDespliegue(){
     +'<thead><tr>'
     +'<th>Mes</th><th>Fecha Cierre</th>'
     +'<th style="text-align:right;color:#C9A84C">Capital en Creditos</th>'
-    +'<th style="text-align:right;color:var(--navy2)">Capital en Caja</th>'
+    +'<th style="text-align:right;color:#1A3260">Capital en Caja</th>'
     +'<th style="text-align:right">Capital Total (Aportes)</th>'
     +'<th style="text-align:center">% Desplegado</th>'
     +'<th>Estado</th>'
@@ -5006,7 +4793,7 @@ function renderCapitalDespliegue(){
     +'</table></div>'
     +'<div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--muted);padding:0 4px">'
     +'<span><span style="display:inline-block;width:12px;height:12px;background:#C9A84C;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital en creditos activos (produciendo intereses)</span>'
-    +'<span><span style="display:inline-block;width:12px;height:12px;background:var(--navy2);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital en caja (disponible para prestar)</span>'
+    +'<span><span style="display:inline-block;width:12px;height:12px;background:#1A3260;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital en caja (disponible para prestar)</span>'
     +'</div>';
 }
 
@@ -5173,15 +4960,15 @@ function filtrarCaja(){
       </div>
       <div style="width:1px;background:var(--border);margin:8px 0"></div>
       <div style="padding:10px 18px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:2px;min-width:140px">
-        <span style="font-size:9.5px;font-weight:700;color:var(--navy2);text-transform:uppercase;letter-spacing:.6px">🏦 Capital en caja</span>
+        <span style="font-size:9.5px;font-weight:700;color:#1A3260;text-transform:uppercase;letter-spacing:.6px">🏦 Capital en caja</span>
         <span style="font-size:15px;font-weight:800;color:${capEnCaja<0?'#C0392B':'#1A3260'}">${fmt(capEnCaja)}</span>
         <span style="font-size:9px;color:${capEnCaja<0?'#C0392B':'var(--muted)'}">
           ${pctCap}% del saldo total${capEnCaja<0?' · Capital prestado con intereses':''}
         </span>
       </div>
       <div style="padding:10px 18px;display:flex;flex-direction:column;gap:2px;min-width:150px">
-        <span style="font-size:9.5px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.6px">📈 Intereses en caja</span>
-        <span style="font-size:15px;font-weight:800;color:var(--warn)">${fmt(intEnCaja)}</span>
+        <span style="font-size:9.5px;font-weight:700;color:#B07D12;text-transform:uppercase;letter-spacing:.6px">📈 Intereses en caja</span>
+        <span style="font-size:15px;font-weight:800;color:#B07D12">${fmt(intEnCaja)}</span>
         <span style="font-size:9px;color:var(--muted)">${pctInt}% del saldo total</span>
       </div>
     </div>`;
@@ -5234,9 +5021,9 @@ function renderProyeccionEnWrap(wrap){
     var pctCap=Math.round(m.cap/maxMes*100);
     var pctInt=Math.round(m.int/maxMes*100);
     return '<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:4px">'
-      +'<div style="font-size:10px;font-weight:700;color:var(--navy)">'+(m.tot>0?fmt(m.tot):'—')+'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text)">'+(m.tot>0?fmt(m.tot):'—')+'</div>'
       +'<div style="width:100%;height:80px;background:#F0F4FF;border-radius:8px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden">'
-      +(m.tot>0?'<div style="width:100%;height:'+pctInt+'%;background:#B07D12;opacity:.85"></div><div style="width:100%;height:'+pctCap+'%;background:var(--navy2)"></div>':'')
+      +(m.tot>0?'<div style="width:100%;height:'+pctInt+'%;background:#B07D12;opacity:.85"></div><div style="width:100%;height:'+pctCap+'%;background:#1A3260"></div>':'')
       +'</div>'
       +'<div style="font-size:10px;color:var(--muted);text-transform:capitalize">'+m.label+'</div>'
       +'</div>';
@@ -5245,17 +5032,17 @@ function renderProyeccionEnWrap(wrap){
     if(!fs.length)return'<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--muted);font-size:11px">Sin cuotas en este período</td></tr>';
     return fs.map(function(f){
       var eb=f.vencida
-        ?'<span style="background:#FEE;color:var(--err);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">Vencida</span>'
+        ?'<span style="background:#FEE;color:#C0392B;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">Vencida</span>'
         :(f.estado==='parcial'||f.estado==='parcial_vencida'
-          ?'<span style="background:#FEF9EC;color:var(--warn);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">Parcial</span>'
-          :'<span style="background:#EDF7F0;color:var(--ok);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">Pendiente</span>');
+          ?'<span style="background:#FEF9EC;color:#B07D12;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">Parcial</span>'
+          :'<span style="background:#EDF7F0;color:#1A7A4A;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">Pendiente</span>');
       return'<tr>'
         +'<td style="white-space:nowrap;font-size:12px">'+fmtDate(f.fecha)+'</td>'
         +'<td style="font-weight:600;font-size:12px">'+esc(f.cliente)+'</td>'
         +'<td style="font-size:11px;color:var(--muted)">'+esc(f.concepto)+'</td>'
         +'<td style="text-align:center;font-size:11.5px">#'+f.cuota+'/'+f.totalCuotas+'</td>'
-        +'<td style="text-align:right;color:var(--navy2);font-weight:700;font-size:12px">'+fmt(f.capital)+'</td>'
-        +'<td style="text-align:right;color:var(--warn);font-weight:700;font-size:12px">'+fmt(f.intereses+(f.mora||0))+'</td>'
+        +'<td style="text-align:right;color:#1A3260;font-weight:700;font-size:12px">'+fmt(f.capital)+'</td>'
+        +'<td style="text-align:right;color:#B07D12;font-weight:700;font-size:12px">'+fmt(f.intereses+(f.mora||0))+'</td>'
         +'<td style="text-align:right;color:var(--ok);font-weight:800;font-size:12px">'+fmt(f.total)+'</td>'
         +'<td>'+eb+'</td>'
         +'</tr>';
@@ -5272,16 +5059,16 @@ function renderProyeccionEnWrap(wrap){
       +'<div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">'+k.ico+' '+k.label+'</div>'
       +'<div style="font-size:22px;font-weight:800;color:'+k.color+';margin-bottom:6px">'+fmt(k.s.tot)+'</div>'
       +'<div style="display:flex;gap:10px;font-size:10.5px">'
-      +'<span style="color:var(--navy2)">💼 '+fmt(k.s.cap)+'</span>'
-      +'<span style="color:var(--warn)">📈 '+fmt(k.s.int)+'</span>'
+      +'<span style="color:#1A3260">💼 '+fmt(k.s.cap)+'</span>'
+      +'<span style="color:#B07D12">📈 '+fmt(k.s.int)+'</span>'
       +'</div></div>';
   });
   html+='</div>';
   html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:18px">'
-    +'<div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px">📊 Flujo Proyectado — Próximos 6 Meses</div>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px">📊 Flujo Proyectado — Próximos 6 Meses</div>'
     +'<div style="display:flex;gap:8px;align-items:flex-end">'+barrasHtml+'</div>'
     +'<div style="display:flex;gap:16px;margin-top:10px;font-size:10.5px">'
-    +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--navy2);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital</span>'
+    +'<span><span style="display:inline-block;width:10px;height:10px;background:#1A3260;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital</span>'
     +'<span><span style="display:inline-block;width:10px;height:10px;background:#B07D12;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Intereses + Mora</span>'
     +'</div></div>';
   ['venc','d30','d60','d90','mas'].forEach(function(k){
@@ -5297,8 +5084,8 @@ function renderProyeccionEnWrap(wrap){
       +'</div></div>'
       +'<div class="tbl-wrap"><table style="min-width:700px"><thead><tr>'
       +'<th>Fecha</th><th>Cliente</th><th>Concepto</th><th style="text-align:center">Cuota</th>'
-      +'<th style="text-align:right;color:var(--navy2)">💼 Capital</th>'
-      +'<th style="text-align:right;color:var(--warn)">📈 Intereses</th>'
+      +'<th style="text-align:right;color:#1A3260">💼 Capital</th>'
+      +'<th style="text-align:right;color:#B07D12">📈 Intereses</th>'
       +'<th style="text-align:right;color:var(--ok)">💵 Total</th>'
       +'<th>Estado</th>'
       +'</tr></thead><tbody>'+tablaFilas(b.filas)+'</tbody></table></div>'
@@ -5424,10 +5211,10 @@ function onRefinCredChange(){
   var colorV=venc>0?'#C0392B':'#1A7A4A';
   wrap.innerHTML=
     '<div style="background:var(--bg);border-radius:9px;padding:12px 14px;font-size:12px;display:flex;flex-direction:column;gap:6px">'
-    +'<div style="font-weight:700;color:var(--navy);margin-bottom:2px">'+esc(cli.nombre||'—')+'</div>'
-    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Capital pendiente</span><span style="font-weight:700;color:var(--navy2)">'+fmt(Math.round(capPend))+'</span></div>'
+    +'<div style="font-weight:700;color:var(--text);margin-bottom:2px">'+esc(cli.nombre||'—')+'</div>'
+    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Capital pendiente</span><span style="font-weight:700;color:#1A3260">'+fmt(Math.round(capPend))+'</span></div>'
     +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Mora acumulada</span><span style="font-weight:700;color:'+(mora>0?'#C0392B':'#1A7A4A')+'">'+fmt(Math.round(mora))+'</span></div>'
-    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cuotas pendientes</span><span style="font-weight:700;color:var(--navy)">'+cuotasPend+'</span></div>'
+    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cuotas pendientes</span><span style="font-weight:700;color:var(--text)">'+cuotasPend+'</span></div>'
     +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cuotas vencidas</span><span style="font-weight:700;color:'+colorV+'">'+venc+'</span></div>'
     +'</div>';
   // Reset tipo
@@ -5533,10 +5320,10 @@ function previewRefinanciacion(tipo){
     html='<div style="display:flex;flex-direction:column;gap:10px">'
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
       +['Nueva cuota: '+fmt(Math.round(nCuota)),'Nuevas cuotas: '+nCuotas,'Tasa: '+nTasa+'%'].map(function(t){
-        return '<div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;font-weight:700;color:var(--navy)">'+t+'</div>';
+        return '<div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;font-weight:700;color:var(--text)">'+t+'</div>';
       }).join('')
       +'</div>'
-      +(condMora?'<div style="font-size:11px;color:var(--ok);background:#EDF7F0;padding:8px 12px;border-radius:7px">✅ Mora de '+fmt(Math.round(mora))+' condonada como gesto comercial</div>':'')
+      +(condMora?'<div style="font-size:11px;color:#1A7A4A;background:#EDF7F0;padding:8px 12px;border-radius:7px">✅ Mora de '+fmt(Math.round(mora))+' condonada como gesto comercial</div>':'')
       +'<div style="font-size:11px;color:var(--muted)">Se actualizará el crédito #'+c.id+' con las nuevas condiciones. Los pagos ya realizados se conservan.</div>'
       +'</div>';
   } else if(tipo==='congelar'){
@@ -5547,7 +5334,7 @@ function previewRefinanciacion(tipo){
       +'Durante <strong>'+nPer+' cuota(s)</strong> solo se cobrará el capital: '
       +'<strong>'+fmt(Math.round(cuotasPend[0]?cuotasPend[0].capitalCuota:0))+' por cuota</strong>.<br>'
       +'Las cuotas restantes ('+Math.max(0,cuotasPend.length-nPer)+') continúan normalmente.</div>'
-      +(condMoraC?'<div style="font-size:11px;color:var(--ok);background:#EDF7F0;padding:8px 12px;border-radius:7px">✅ Mora de '+fmt(Math.round(mora))+' condonada durante el período congelado</div>':'')
+      +(condMoraC?'<div style="font-size:11px;color:#1A7A4A;background:#EDF7F0;padding:8px 12px;border-radius:7px">✅ Mora de '+fmt(Math.round(mora))+' condonada durante el período congelado</div>':'')
       +'</div>';
   } else if(tipo==='consolidar'){
     var nMonto=+document.getElementById('refin-monto-nuevo').value||capPend;
@@ -5559,7 +5346,7 @@ function previewRefinanciacion(tipo){
     html='<div style="display:flex;flex-direction:column;gap:10px">'
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
       +['Nueva cuota: '+fmt(Math.round(nCuotaC)),'Cuotas: '+nCuotasC,'Tasa: '+nTasaC+'%'].map(function(t){
-        return '<div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;font-weight:700;color:var(--navy)">'+t+'</div>';
+        return '<div style="text-align:center;padding:10px;background:var(--bg);border-radius:8px;font-size:12px;font-weight:700;color:var(--text)">'+t+'</div>';
       }).join('')
       +'</div>'
       +'<div style="font-size:11px;background:#FFF8EC;border:1px solid #F0D080;padding:10px 12px;border-radius:8px">'
@@ -5751,11 +5538,11 @@ function renderCaja(){
   var _cajaPctCap=_cajaTot>0?Math.round(Math.abs(c.saldoCapCaja)/_cajaTot*100):0;
   var _cajaPctInt=_cajaTot>0?100-_cajaPctCap:0;
   var htmlCajaComposicion='<div style="height:18px;border-radius:9px;overflow:hidden;display:flex;background:#eee;margin-bottom:8px">'
-    +'<div style="width:'+_cajaPctCap+'%;background:var(--navy2);transition:width .4s" title="Capital: '+fmt(c.saldoCapCaja)+'"></div>'
+    +'<div style="width:'+_cajaPctCap+'%;background:#1A3260;transition:width .4s" title="Capital: '+fmt(c.saldoCapCaja)+'"></div>'
     +'<div style="width:'+_cajaPctInt+'%;background:#B07D12;transition:width .4s" title="Intereses: '+fmt(c.saldoIntCaja)+'"></div>'
     +'</div>'
     +'<div style="display:flex;gap:16px;font-size:11px">'
-    +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--navy2);border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital '+_cajaPctCap+'%</span>'
+    +'<span><span style="display:inline-block;width:10px;height:10px;background:#1A3260;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Capital '+_cajaPctCap+'%</span>'
     +'<span><span style="display:inline-block;width:10px;height:10px;background:#B07D12;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Intereses '+_cajaPctInt+'%</span>'
     +'</div>';
   const gastoRows=[...DB.gastos].reverse().map(function(g){return '<tr>'
@@ -5765,8 +5552,8 @@ function renderCaja(){
     +'<td>'+esc(g.descripcion||'—')+'</td>'
     +'<td style="font-weight:700;color:var(--err)">'+fmt(g.monto)+'</td>'
     +'<td style="white-space:nowrap;display:flex;gap:4px">'
-    +'<button class="btn btn-secondary btn-sm" style="background:var(--ok);color:#fff;border-color:var(--ok)" onclick="editarGasto('+g.id+')" title="Editar">✏️</button>'
-    +'<button class="btn btn-secondary btn-sm" style="background:var(--navy2);color:#fff;border-color:var(--navy2)" onclick="imprimirSoporteGasto('+g.id+')" title="Soporte">🖨️</button>'
+    +'<button class="btn btn-secondary btn-sm" style="background:#1A7A4A;color:#fff;border-color:#1A7A4A" onclick="editarGasto('+g.id+')" title="Editar">✏️</button>'
+    +'<button class="btn btn-secondary btn-sm" style="background:#1A3260;color:#fff;border-color:#1A3260" onclick="imprimirSoporteGasto('+g.id+')" title="Soporte">🖨️</button>'
     +'<button class="btn btn-danger btn-sm" onclick="eliminarGasto('+g.id+')">🗑</button>'
     +'</td>'
     +'</tr>';}).join('');
@@ -5841,7 +5628,7 @@ function renderCaja(){
         <!-- ════ PANEL: RESUMEN ════ -->
         <div id="caja-panel-resumen" style="display:${_cajaSubTab==='resumen'?'block':'none'}">
           <div style="padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff)">
-            <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:2px">📊 Resumen Control de Caja</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:2px">📊 Resumen Control de Caja</div>
             <div style="font-size:12px;color:var(--muted)">Estado actual del flujo de efectivo</div>
           </div>
           <div style="padding:22px 24px;display:flex;flex-direction:column;gap:20px">
@@ -5874,14 +5661,14 @@ function renderCaja(){
         <!-- ════ PANEL: CAPITAL ════ -->
         <div id="caja-panel-capital" style="display:${_cajaSubTab==='capital'?'block':'none'}">
           <div style="padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f0faf5,#fff)">
-            <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:2px">💰 Registrar Capital</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:2px">💰 Registrar Capital</div>
             <div style="font-size:12px;color:var(--muted)">Ingresa nuevos aportes de capital a la cartera</div>
           </div>
           <div style="padding:22px 24px;display:flex;flex-direction:column;gap:20px">
             <!-- Formulario -->
             <div class="card" style="border-left:4px solid var(--ok);margin-bottom:0">
               <div class="card-body" style="padding:18px 20px">
-                <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Nuevo Aporte de Capital</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">Nuevo Aporte de Capital</div>
                 <div style="display:flex;flex-direction:column;gap:12px">
                   <div class="field" style="margin-bottom:0">
                     <label>Descripción *</label>
@@ -5903,7 +5690,7 @@ function renderCaja(){
             </div>
             <!-- Historial -->
             <div>
-              <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px">
                 <span>Historial de Aportes</span>
                 <span style="background:var(--ok-bg);color:var(--ok);padding:2px 9px;border-radius:20px;font-size:11px">${DB.aportes.length} registros</span>
               </div>
@@ -5918,14 +5705,14 @@ function renderCaja(){
         <!-- ════ PANEL: GASTOS ════ -->
         <div id="caja-panel-gastos" style="display:${_cajaSubTab==='gastos'?'block':'none'}">
           <div style="padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#fdf5ff,#fff)">
-            <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:2px">🧾 Registrar Gasto</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:2px">🧾 Registrar Gasto</div>
             <div style="font-size:12px;color:var(--muted)">Registra los gastos operativos de la cartera</div>
           </div>
           <div style="padding:22px 24px;display:flex;flex-direction:column;gap:20px">
             <!-- Formulario -->
             <div class="card" style="border-left:4px solid var(--mora);margin-bottom:0">
               <div class="card-body" style="padding:18px 20px">
-                <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Nuevo Gasto</div>
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px">Nuevo Gasto</div>
                 <div style="display:flex;flex-direction:column;gap:12px">
                   <div class="field" style="margin-bottom:0">
                     <label>Categoría *</label>
@@ -5953,7 +5740,7 @@ function renderCaja(){
             </div>
             <!-- Historial -->
             <div>
-              <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px">
                 <span>Historial de Gastos</span>
                 <span style="background:var(--mora-bg);color:var(--mora);padding:2px 9px;border-radius:20px;font-size:11px">${DB.gastos.length} registros</span>
               </div>
@@ -5968,7 +5755,7 @@ function renderCaja(){
         <!-- ════ PANEL: MOVIMIENTOS ════ -->
         <div id="caja-panel-movimientos" style="display:${_cajaSubTab==='movimientos'?'block':'none'}">
           <div style="padding:20px 24px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f5f7ff,#fff)">
-            <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:2px">📋 Movimientos de Caja</div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:2px">📋 Movimientos de Caja</div>
             <div style="font-size:12px;color:var(--muted)">Flujo cronológico de todos los movimientos</div>
           </div>
           <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:#fafbff">
@@ -6058,7 +5845,7 @@ function editarGasto(id){
     overlay.innerHTML=`
       <div style="background:#fff;border-radius:16px;padding:28px 28px 22px;max-width:480px;width:100%;box-shadow:0 8px 40px #0003">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-          <span style="font-weight:800;font-size:17px;color:var(--navy)">✏️ Editar Gasto <span style="color:var(--muted);font-size:13px">#G${String(g.id).padStart(3,'0')}</span></span>
+          <span style="font-weight:800;font-size:17px;color:var(--text)">✏️ Editar Gasto <span style="color:var(--muted);font-size:13px">#G${String(g.id).padStart(3,'0')}</span></span>
           <button onclick="document.getElementById('edit-gasto-overlay').remove()" style="border:none;background:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
@@ -6366,8 +6153,8 @@ function svgDonut(slices, label){
     legendRows+=`<tr>
       <td style="padding:3px 5px"><span style="display:inline-block;width:10px;height:10px;
         background:${s.color};border-radius:2px"></span></td>
-      <td style="font-size:11.5px;color:var(--navy);padding:3px 8px 3px 2px">${esc(s.label)}</td>
-      <td style="font-size:11.5px;font-weight:700;color:var(--navy)">${Math.round(pct*100)}%</td>
+      <td style="font-size:11.5px;color:var(--text);padding:3px 8px 3px 2px">${esc(s.label)}</td>
+      <td style="font-size:11.5px;font-weight:700;color:var(--text)">${Math.round(pct*100)}%</td>
       <td style="font-size:11px;color:var(--muted);padding-left:6px">${fmt(s.value)}</td></tr>`;
     angle=a2;
   });
@@ -6565,10 +6352,10 @@ function renderScoreClientes(){
 
   wrap.innerHTML=
     '<div style="padding:8px 18px;display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);background:#fafbff">'
-    +'<span style="color:var(--ok);font-weight:700">■</span> ≥4.0 Excelente &nbsp;'
+    +'<span style="color:#1A7A4A;font-weight:700">■</span> ≥4.0 Excelente &nbsp;'
     +'<span style="color:#3B82C4;font-weight:700">■</span> ≥3.0 Muy Bueno &nbsp;'
     +'<span style="color:#C9A84C;font-weight:700">■</span> ≥2.5 Bueno &nbsp;'
-    +'<span style="color:var(--err);font-weight:700">■</span> &lt;1.5 Bajo'
+    +'<span style="color:#C0392B;font-weight:700">■</span> &lt;1.5 Bajo'
     +'</div>'
     +'<div class="tbl-wrap"><table><thead><tr>'
     +'<th>#</th><th>Cliente</th><th style="text-align:center">Score</th><th>Calificación</th>'
@@ -6638,7 +6425,7 @@ function renderAnalisisBody(desde,hasta){
     // ── Helper: panel header ──
   function panelHeader(icon, title, subtitle, bgColor){
     return `<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:${bgColor||'linear-gradient(90deg,#f7f9ff,#fff)'}">
-      <div style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:2px">${icon} ${title}</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px">${icon} ${title}</div>
       ${subtitle?`<div style="font-size:11.5px;color:var(--muted)">${subtitle}</div>`:''}
     </div>`;
   }
@@ -6656,9 +6443,9 @@ function renderAnalisisBody(desde,hasta){
     var label=item[0], pct=item[1], col=item[2];
     return '<div>'
       +'<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px">'
-      +'<span style="color:var(--navy);font-weight:600">'+label+'</span>'
+      +'<span style="color:var(--text);font-weight:600">'+label+'</span>'
       +'<span style="font-weight:800;color:'+col+'">'+pct.toFixed(1)+'%</span></div>'
-      +'<div style="background:#E8EDF8;border-radius:20px;height:8px">'
+      +'<div style="background:var(--surface2);border-radius:20px;height:8px">'
       +'<div style="height:100%;width:'+Math.min(100,pct)+'%;background:'+col+';border-radius:20px;transition:width .4s"></div>'
       +'</div></div>';
   }).join('');
@@ -6672,17 +6459,17 @@ function renderAnalisisBody(desde,hasta){
 
   var htmlRdtoCapitalTotal =
     svgGauge(_pctRdtoReal,'Rdto. s/ Capital Total','#1A7A4A')
-    +'<div style="font-size:12px;font-weight:700;color:var(--navy);margin-top:6px">Intereses Cobrados vs Capital Total Cartera</div>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text);margin-top:6px">Intereses Cobrados vs Capital Total Cartera</div>'
     +'<div style="font-size:11px;color:var(--muted);margin-top:4px">'+fmt(_intCob)+' / '+fmt(_capitalTotal)+'</div>'
     +'<div style="margin-top:8px;padding:7px 10px;background:#EDF7F0;border-radius:7px;font-size:11px;color:#1A5C30">'
     +'Rendimiento real sobre el capital total invertido'
-    +'<strong style="font-size:13px;display:block;color:var(--ok)">'+_pctRdtoReal.toFixed(1)+'%</strong></div>';
+    +'<strong style="font-size:13px;display:block;color:#1A7A4A">'+_pctRdtoReal.toFixed(1)+'%</strong></div>';
 
   var htmlRdtoProyectado =
     svgGauge(_pctRdtoEsp,'Rdto. Proyectado','#3B82C4')
-    +'<div style="font-size:12px;font-weight:700;color:var(--navy);margin-top:6px">Intereses Proyectados vs Capital Total</div>'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text);margin-top:6px">Intereses Proyectados vs Capital Total</div>'
     +'<div style="font-size:11px;color:var(--muted);margin-top:4px">'+fmt(_intEsp)+' / '+fmt(_capitalTotal)+'</div>'
-    +'<div style="margin-top:8px;padding:7px 10px;background:#EEF4FF;border-radius:7px;font-size:11px;color:var(--navy2)">'
+    +'<div style="margin-top:8px;padding:7px 10px;background:#EEF4FF;border-radius:7px;font-size:11px;color:#1A3260">'
     +'Rendimiento proyectado si se cobran todos los créditos'
     +'<strong style="font-size:13px;display:block;color:#3B82C4">'+_pctRdtoEsp.toFixed(1)+'%</strong></div>';
 
@@ -6692,12 +6479,12 @@ function renderAnalisisBody(desde,hasta){
     +'<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">'
     +'<span style="color:#C9A84C;font-weight:700">Intereses cobrados hasta hoy</span>'
     +'<span style="font-weight:800">'+fmt(_intCob)+' ('+_pctRdtoReal.toFixed(1)+'%)</span></div>'
-    +'<div style="background:#E8EDF8;border-radius:20px;height:10px">'
+    +'<div style="background:var(--surface2);border-radius:20px;height:10px">'
     +'<div style="height:100%;width:'+Math.min(100,(_pctRdtoReal/_pctMax*100))+'%;background:#C9A84C;border-radius:20px"></div></div></div>'
     +'<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">'
     +'<span style="color:#3B82C4;font-weight:700">Intereses proyectados (total créditos)</span>'
     +'<span style="font-weight:800">'+fmt(_intEsp)+' ('+_pctRdtoEsp.toFixed(1)+'%)</span></div>'
-    +'<div style="background:#E8EDF8;border-radius:20px;height:10px">'
+    +'<div style="background:var(--surface2);border-radius:20px;height:10px">'
     +'<div style="height:100%;width:'+Math.min(100,(_pctRdtoEsp/_pctMax*100))+'%;background:#3B82C4;border-radius:20px"></div></div></div>'
     +'<div style="font-size:10.5px;color:var(--muted);margin-top:2px">* Proyectado = si todos los créditos activos se cobran completos al vencimiento</div>'
     +'</div>';
@@ -6792,7 +6579,7 @@ function renderAnalisisBody(desde,hasta){
               <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:${bg};border-radius:10px">
                 <div style="display:flex;align-items:center;gap:10px">
                   <span style="font-size:18px">${ic}</span>
-                  <span style="font-size:13px;font-weight:600;color:var(--navy)">${lbl}</span>
+                  <span style="font-size:13px;font-weight:600;color:var(--text)">${lbl}</span>
                 </div>
                 <span style="font-size:22px;font-weight:800;color:${col}">${val}</span>
               </div>`).join('')}
@@ -6824,7 +6611,7 @@ function renderAnalisisBody(desde,hasta){
                 ['Gastos del período', d.totalGastosFiltro, '#C0392B'],
               ].map(([lbl,val,col])=>`
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
-                  <span style="font-size:12px;color:var(--navy)">${lbl}</span>
+                  <span style="font-size:12px;color:var(--text)">${lbl}</span>
                   <span style="font-size:13px;font-weight:700;color:${col}">${fmt(val)}</span>
                 </div>`).join('')}
             </div>
@@ -6838,7 +6625,7 @@ function renderAnalisisBody(desde,hasta){
       ${panelHeader('🏗️','Indicador Capital de Trabajo Activo','Capital desplegado en créditos vs disponible en caja — por cierre de mes','linear-gradient(90deg,#f5f0ff,#fff)')}
       <div style="padding:22px">
         <div style="background:var(--bg);border-radius:9px;padding:14px 16px;margin-bottom:16px;border:1px solid var(--border)">
-          <div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
             Fechas de Cierre de Mes
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
@@ -6867,7 +6654,7 @@ function renderAnalisisBody(desde,hasta){
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;text-align:center;margin-bottom:18px">
           <div style="padding:18px;background:var(--bg);border-radius:11px;border:1px solid var(--border)">
             ${svgGauge(d.totalCapitalOtorgado>0?Math.min(100,(d.totalInteresesRecaudados+d.totalMoraRecaudada)/d.totalCapitalOtorgado*100):0,'Rdto. s/ Capital Prestado','#C9A84C')}
-            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-top:6px">Intereses Cobrados vs Capital Prestado</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:6px">Intereses Cobrados vs Capital Prestado</div>
             <div style="font-size:11px;color:var(--muted);margin-top:4px">${fmt(d.totalInteresesRecaudados+d.totalMoraRecaudada)} / ${fmt(d.totalCapitalOtorgado)}</div>
             <div style="margin-top:8px;padding:7px 10px;background:#FEF9EC;border-radius:7px;font-size:11px;color:#8A6800">
               Por cada $100 prestados se han cobrado
@@ -7049,7 +6836,7 @@ function renderDatos(){
       <div class="card-header"><span class="card-title">📥 Importar desde Excel</span></div>
       <div class="card-body" style="text-align:center;padding:36px 20px">
         <div style="font-size:40px;margin-bottom:12px">🔒</div>
-        <div style="font-weight:700;font-size:15px;color:var(--navy);margin-bottom:8px">Acceso Restringido</div>
+        <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:8px">Acceso Restringido</div>
         <div style="font-size:13px;color:var(--muted);line-height:1.6">
           La importación de datos está reservada exclusivamente al <strong>Administrador</strong>.<br>
           Esto garantiza que ningún usuario pueda sobrescribir información registrada.<br><br>
@@ -7080,7 +6867,7 @@ function renderDatos(){
         </div>
         <div style="margin-top:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
           ${Object.entries(SUBCARPETAS).map(([k,v])=>`
-            <div style="background:#f5f7ff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--navy)">
+            <div style="background:#f5f7ff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--text)">
               <div style="font-size:15px;margin-bottom:3px">${{resumen:'📄',contrato:'📜',recibo:'🧾',backup:'💾',plantilla:'📋',datos:'📊'}[k]}</div>
               <div style="font-weight:700">${v}/</div>
               <div style="color:var(--muted);font-size:10px">${{resumen:'Resúmenes PDF',contrato:'Contratos PDF',recibo:'Recibos PDF',backup:'Backups Excel',plantilla:'Plantillas Excel',datos:'Datos generales'}[k]}</div>
@@ -7112,7 +6899,7 @@ function renderDatos(){
               ['📊 AMORTIZ_REAL', 'Tabla de amortización real con mora (solo lectura)'],
             ].map(([lbl,desc])=>`
               <div style="display:flex;gap:12px;padding:8px 12px;background:var(--bg);border-radius:8px;align-items:center">
-                <span style="font-weight:700;font-size:12px;color:var(--navy);min-width:148px;white-space:nowrap">${lbl}</span>
+                <span style="font-weight:700;font-size:12px;color:var(--text);min-width:148px;white-space:nowrap">${lbl}</span>
                 <span style="font-size:11.5px;color:var(--muted)">${desc}</span>
               </div>`).join('')}
           </div>
@@ -7143,7 +6930,7 @@ function renderDatos(){
           ${statCard('🗄','Espacio total',  (bytes/1024).toFixed(1)+' KB', '#C0392B')}
         </div>
         <div class="info-box info-box-note" style="margin-bottom:18px;font-size:12.5px">
-          <strong style="color:var(--navy)">ℹ️ Almacenamiento local</strong><br>
+          <strong style="color:var(--text)">ℹ️ Almacenamiento local</strong><br>
           Los datos persisten al cerrar el navegador, pero son exclusivos de este dispositivo y navegador.
           Si borras el caché del navegador, los datos desaparecen. <strong>Haz backups periódicos en Excel.</strong>
         </div>
@@ -7160,7 +6947,7 @@ function renderDatos(){
     <!-- GOOGLE DRIVE SYNC PANEL -->
     <div class="card" style="margin-bottom:22px;border:2px solid #4285F4">
       <div class="card-header" style="background:linear-gradient(90deg,#EEF4FF,#fff)">
-        <span class="card-title" style="color:var(--navy2)">
+        <span class="card-title" style="color:#1A3260">
           <svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:6px">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -7175,8 +6962,8 @@ function renderDatos(){
       </div>
       <div class="card-body">
         ${GD.isConnected() ? `
-        <div class="info-box" style="background:#EDF7F0;border-color:var(--ok);margin-bottom:16px">
-          <strong style="color:var(--ok)">✅ Google Drive activo</strong><br>
+        <div class="info-box" style="background:#EDF7F0;border-color:#1A7A4A;margin-bottom:16px">
+          <strong style="color:#1A7A4A">✅ Google Drive activo</strong><br>
           <span style="font-size:12.5px;color:var(--muted)">
             Los datos se guardan automáticamente en tu Drive en la carpeta
             <strong>CreditosRyM_Data</strong> cada vez que haces un registro.
@@ -7184,7 +6971,7 @@ function renderDatos(){
           </span>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-primary" onclick="GD.fullSyncAll()" style="background:var(--ok);border-color:var(--ok)">
+          <button class="btn btn-primary" onclick="GD.fullSyncAll()" style="background:#1A7A4A;border-color:#1A7A4A">
             ☁ Sincronizar todo a Drive
           </button>
           <button class="btn btn-secondary" onclick="GD.loadCartera(CARTERA_ID).then(()=>{
@@ -7243,7 +7030,7 @@ function renderDatos(){
             {hoja:'USUARIOS', cols:[['id','Número entero único'],['usuario','Nombre (oblig.)'],['clave','Contraseña (oblig.)'],['rol','admin / usuario']]},
           ].map(({hoja,cols})=>`
             <div>
-              <div style="font-weight:700;color:var(--navy);margin-bottom:8px;padding:5px 11px;background:var(--bg);border-radius:6px;font-size:13px">📋 ${hoja}</div>
+              <div style="font-weight:700;color:var(--text);margin-bottom:8px;padding:5px 11px;background:var(--bg);border-radius:6px;font-size:13px">📋 ${hoja}</div>
               <table><thead><tr><th>Columna</th><th>Descripción</th></tr></thead><tbody>
               ${cols.map(([c,d])=>`<tr>
                 <td style="font-family:monospace;color:var(--mora);font-weight:600">${c}</td>
@@ -7258,7 +7045,7 @@ function renderDatos(){
     <div class="card" style="margin-top:22px">
       <div class="card-header">
         <span class="card-title">🔍 Auditoría del Sistema</span>
-        <span class="badge" style="background:var(--navy2);color:#fff;font-size:11px">Registro de acciones por usuario</span>
+        <span class="badge" style="background:#1A3260;color:#fff;font-size:11px">Registro de acciones por usuario</span>
       </div>
       <div class="card-body">
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
@@ -7385,7 +7172,7 @@ function renderAuditPanel(){
   const rows=filtrados.map(e=>`
     <tr>
       <td style="white-space:nowrap;font-size:11.5px;color:var(--muted)">${fmtDt(e.fecha)}</td>
-      <td style="font-weight:700;font-size:12.5px;color:var(--navy)">👤 ${esc(e.usuario)}</td>
+      <td style="font-weight:700;font-size:12.5px;color:var(--text)">👤 ${esc(e.usuario)}</td>
       <td><span style="font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;color:#fff;background:${badgeColor(e.accion)}">${esc(e.accion)}</span></td>
       <td style="font-size:11.5px;color:#7B2D8B;font-weight:600">${esc(e.entidad)}</td>
       <td style="font-size:11.5px;color:var(--muted)">${esc(e.detalle)}</td>
@@ -7607,18 +7394,18 @@ function importarExcel(input){
       log.innerHTML=msgs.map(m=>`<div class="import-log-item ${m.t==='err'?'info-box-err':m.t==='warn'?'info-box-warn':'info-box-ok'}">${m.m}</div>`).join('');
       importDataPending={clientes,creditos,pagos,usuarios,gastos,aportes,nextIds};
       prev.innerHTML=`<div style="padding:13px 15px;background:var(--bg);border-radius:10px;border:1px solid var(--gold);margin-top:10px">
-        <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:13.5px">Vista previa del backup:</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:10px;font-size:13.5px">Vista previa del backup:</div>
         <div class="grid5" style="margin-bottom:14px">
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Clientes</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${clientes.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${clientes.length}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Créditos</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${creditos.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${creditos.length}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Pagos</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${pagos.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${pagos.length}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Gastos</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${gastos.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${gastos.length}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Aportes</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${aportes.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${aportes.length}</div></div>
         </div>
         <button class="btn btn-primary btn-full" style="font-size:13.5px;padding:11px" onclick="confirmarImport()">
           ✅ Confirmar Importación — Reemplazar datos actuales</button></div>`;
@@ -7831,20 +7618,20 @@ function previsualizarImportGlobal(input){
         nextIdUsuario:usuariosValidados.reduce((m,u)=>Math.max(m,u.id||0),0)+1,
       };
       prev.innerHTML=`<div style="padding:13px 15px;background:var(--bg);border-radius:10px;border:1px solid var(--gold);margin-top:10px">
-        <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:13.5px">Vista previa del Backup Global:</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:10px;font-size:13.5px">Vista previa del Backup Global:</div>
         <div class="grid3" style="margin-bottom:10px">
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Carteras</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${carterasValidadas.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${carterasValidadas.length}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Usuarios</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${usuariosValidados.length}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${usuariosValidados.length}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Clientes totales</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${totalClientes}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${totalClientes}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Créditos totales</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${totalCreditos}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${totalCreditos}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Pagos totales</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${totalPagos}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${totalPagos}</div></div>
           <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Gastos / Aportes</div>
-               <div style="font-size:18px;font-weight:800;color:var(--navy)">${totalGastos} / ${totalAportes}</div></div>
+               <div style="font-size:18px;font-weight:800;color:var(--text)">${totalGastos} / ${totalAportes}</div></div>
         </div>
         <button class="btn btn-danger btn-full" style="font-size:13.5px;padding:11px" onclick="confirmarImportGlobal()">
           🚨 Confirmar Importación Global — Reemplazar TODAS las carteras</button></div>`;
@@ -7928,7 +7715,7 @@ function fuValidarCorreo(){
 function gdEstadoUsuario(u){
   var gdUser=lsGet('gd_linked_user_'+u.id, null);
   if(!gdUser) return '<span style="font-size:11px;color:var(--muted)">—</span>';
-  return '<span style="font-size:11px;color:var(--ok);font-weight:700">Vinculado</span>';
+  return '<span style="font-size:11px;color:#1A7A4A;font-weight:700">Vinculado</span>';
 }
 function renderUsuarios(){
   const sesion=GLOBAL.sesion;
@@ -8350,72 +8137,46 @@ function eliminarUsuario(id){
 }
 
 // ══════════════════════════════════════════════════════
-// INICIO — garantizar que el DOM existe antes de ejecutar
+// INICIO
 // ══════════════════════════════════════════════════════
-function _runInit(){
 (function init(){
   populateLoginUsuarios();
+  _updateThemeToggleIcon();
 
   function continueInit(){
-    const loginEl=document.getElementById('login-screen');
-    // Siempre mostrar login primero como estado seguro
-    if(loginEl) loginEl.style.display='flex';
-
-    try{
-      const sesion=GLOBAL.sesion;
-      if((sesion&&sesion.usuario)){
-        const user=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
-        if(user){
-          GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
-          // Restore cartera if was active
-          const savedCartera=lsGet('cc_active_cartera',null);
-          if(savedCartera&&GLOBAL.carteras.find(c=>c.id===savedCartera)){
-            // Check access
-            const cu=GLOBAL.carterasUsuarios;
-            const hasAccess=user.rol==='admin'||(cu[savedCartera]||[]).includes(user.usuario);
-            if(hasAccess){
-              if(loginEl) loginEl.style.display='none';
-              entrarCartera(savedCartera);
-              return;
-            }
+    const sesion=GLOBAL.sesion;
+    if((sesion&&sesion.usuario)){
+      const user=GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
+      if(user){
+        GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
+        // Restore cartera if was active
+        const savedCartera=lsGet('cc_active_cartera',null);
+        if(savedCartera&&GLOBAL.carteras.find(c=>c.id===savedCartera)){
+          // Check access
+          const cu=GLOBAL.carterasUsuarios;
+          const hasAccess=user.rol==='admin'||(cu[savedCartera]||[]).includes(user.usuario);
+          if(hasAccess){
+            document.getElementById('login-screen').style.display='none';
+            entrarCartera(savedCartera);
+            return;
           }
-          if(loginEl) loginEl.style.display='none';
-          showCarteraScreen();
-          return;
-        } else {
-          GLOBAL.sesion=null;
         }
+        document.getElementById('login-screen').style.display='none';
+        showCarteraScreen();
+      } else {
+        GLOBAL.sesion=null;
       }
-    } catch(e){
-      console.warn('continueInit error:', e);
-      GLOBAL.sesion=null;
     }
-    // Fallback garantizado: mostrar login
-    if(loginEl) loginEl.style.display='flex';
   }
 
-  // Mostrar login SIEMPRE primero — nunca pantalla negra
-  const loginEl = document.getElementById('login-screen');
-  if(loginEl){ loginEl.style.display='flex'; loginEl.style.visibility='visible'; }
-
+  // Mostrar la app inmediatamente — nunca bloquear el login esperando a Google Drive.
+  // Drive se inicializa EN PARALELO de forma no bloqueante.
+  // Esto evita pantallas en blanco por COOP, timeouts, o bloqueos de red.
   continueInit();
 
-  // Restore sidebar state
-  (function(){
-    const sb=document.getElementById('sidebar');
-    if(sb && lsGet('cc_sidebar_collapsed',false)) sb.classList.add('collapsed');
-  })();
-
   // Inicializar Drive en segundo plano, sin bloquear la UI
-  try{ GD._initBackground(); } catch(e){ console.warn('GD init error:', e); }
+  GD._initBackground();
 })();
-}
-// Ejecutar cuando el DOM esté listo — funciona tanto en carga normal como en GitHub Pages
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded', _runInit);
-} else {
-  _runInit(); // DOM ya está listo
-}
 </script>
 </body>
 </html>
