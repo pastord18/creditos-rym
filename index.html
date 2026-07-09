@@ -536,6 +536,10 @@ tr:hover td{background:var(--surface2)}
         <button class="nav-btn" data-tab="analisis" data-label="Análisis" onclick="switchTab('analisis',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg></span><span class="nav-label">Análisis</span><span class="nav-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg></span></button>
         <div class="nav-submenu" data-tab="analisis"></div>
       </div>
+      <div class="nav-group" data-tab="almacen">
+        <button class="nav-btn" data-tab="almacen" data-label="Almacén" onclick="switchTab('almacen',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5z"/><path d="M3 8.5v7L12 20l9-4.5v-7"/><line x1="12" y1="13" x2="12" y2="20"/></svg></span><span class="nav-label">Almacén</span><span class="nav-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,6 15,12 9,18"/></svg></span></button>
+        <div class="nav-submenu" data-tab="almacen"></div>
+      </div>
       <button class="nav-btn" data-tab="datos" data-label="Datos" onclick="switchTab('datos',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v14"/><path d="M4.2 7.2 8 3l3.8 4.2"/><path d="M16 21V7"/><path d="M12.2 16.8 16 21l3.8-4.2"/></svg></span><span class="nav-label">Datos</span></button>
       <button class="nav-btn hidden" data-tab="usuarios" data-label="Usuarios" onclick="switchTab('usuarios',this)"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.8" cy="8" r="3"/><path d="M2.3 20c.9-3.4 3.4-5.2 6.5-5.2s5.6 1.8 6.5 5.2"/><circle cx="17.3" cy="7.5" r="2.4"/><path d="M15.6 12.6c2.6.3 4.5 2 5.2 4.7"/></svg></span><span class="nav-label">Usuarios</span></button>
     </nav>
@@ -611,6 +615,7 @@ tr:hover td{background:var(--surface2)}
     <div id="tab-cobros"    class="section"></div>
     <div id="tab-caja"      class="section"></div>
     <div id="tab-analisis"  class="section"></div>
+    <div id="tab-almacen"   class="section"></div>
     <div id="tab-datos"     class="section"></div>
     <div id="tab-usuarios"  class="section"></div>
     </main>
@@ -872,7 +877,7 @@ const GD = {
     const colors = { ok: '#1A7A4A', err: '#C0392B', sync: '#B07D12', info: '#1A3260' };
     el.style.display = 'inline-flex';
     el.style.background = colors[type] || '#1A3260';
-    el.textContent = msg;
+    el.innerHTML = msg;
   },
 
   // ── Ensure CreditosRyM_Data folder exists in Drive ──────────────────
@@ -1031,7 +1036,7 @@ const GD = {
   async loadCartera(carteraId) {
     if (!GD.accessToken) return false;
     GD._showStatus('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4.5 4.5 0 0 1-.4-9 5.5 5.5 0 0 1 10.6-1.7A4.2 4.2 0 0 1 17.5 18.5z"/></svg></i> Cargando datos...', 'sync');
-    const keys = ['clientes','creditos','pagos','gastos','aportes','nextIds'];
+    const keys = ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds'];
     let loaded = false;
     const report = {};
     for (const k of keys) {
@@ -1067,7 +1072,7 @@ const GD = {
   async fullSync(carteraId) {
     if (!GD.accessToken || !carteraId) return;
     GD._showStatus('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4.5 4.5 0 0 1-.4-9 5.5 5.5 0 0 1 10.6-1.7A4.2 4.2 0 0 1 17.5 18.5z"/></svg></i> Sincronizando...', 'sync');
-    const keys = ['clientes','creditos','pagos','gastos','aportes','nextIds'];
+    const keys = ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds'];
     for (const k of keys) {
       const data = lsGet(`cc_${carteraId}_${k}`, k === 'nextIds' ? {} : []);
       await GD.writeFile(`cc_${carteraId}_${k}.json`, data);
@@ -1089,7 +1094,7 @@ const GD = {
     try {
       if (!silent) GD._showStatus('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4.5 4.5 0 0 1-.4-9 5.5 5.5 0 0 1 10.6-1.7A4.2 4.2 0 0 1 17.5 18.5z"/></svg></i> Sincronizando todo...', 'sync');
       const carteras = GLOBAL.carteras || [];
-      const keys = ['clientes', 'creditos', 'pagos', 'gastos', 'aportes', 'nextIds'];
+      const keys = ['clientes', 'creditos', 'pagos', 'gastos', 'aportes', 'castigos', 'productos', 'entradas', 'ventas', 'proveedores', 'nextIds'];
       for (const c of carteras) {
         if (!c || !c.id) continue;
         for (const k of keys) {
@@ -1241,8 +1246,9 @@ let CARTERA_ID=null;
 let CARTERA_NOMBRE='';
 
 // DB <i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></i> datos de la cartera activa
-let DB={clientes:[],creditos:[],pagos:[],gastos:[],aportes:[],
-        nextIds:{cliente:1,credito:1,pago:1,gasto:1,aporte:1}};
+let DB={clientes:[],creditos:[],pagos:[],gastos:[],aportes:[],castigos:[],
+        productos:[],entradas:[],ventas:[],proveedores:[],
+        nextIds:{cliente:1,credito:1,pago:1,gasto:1,aporte:1,castigo:1,producto:1,entrada:1,venta:1,proveedor:1}};
 
 let adminCallback=null;
 
@@ -1296,11 +1302,16 @@ function _loadCarteraFromLS(){
   try{ DB.pagos   =lsGet(pfx('pagos'),   []); if(!Array.isArray(DB.pagos))DB.pagos=[];       }catch(e){DB.pagos=[];}
   try{ DB.gastos  =lsGet(pfx('gastos'),  []); if(!Array.isArray(DB.gastos))DB.gastos=[];     }catch(e){DB.gastos=[];}
   try{ DB.aportes =lsGet(pfx('aportes'), []); if(!Array.isArray(DB.aportes))DB.aportes=[];   }catch(e){DB.aportes=[];}
+  try{ DB.castigos=lsGet(pfx('castigos'),[]); if(!Array.isArray(DB.castigos))DB.castigos=[]; }catch(e){DB.castigos=[];}
+  try{ DB.productos=lsGet(pfx('productos'),[]); if(!Array.isArray(DB.productos))DB.productos=[]; }catch(e){DB.productos=[];}
+  try{ DB.entradas=lsGet(pfx('entradas'),[]); if(!Array.isArray(DB.entradas))DB.entradas=[]; }catch(e){DB.entradas=[];}
+  try{ DB.ventas=lsGet(pfx('ventas'),[]); if(!Array.isArray(DB.ventas))DB.ventas=[]; }catch(e){DB.ventas=[];}
+  try{ DB.proveedores=lsGet(pfx('proveedores'),[]); if(!Array.isArray(DB.proveedores))DB.proveedores=[]; }catch(e){DB.proveedores=[];}
   try{
     var ni=lsGet(pfx('nextIds'),{});
-    DB.nextIds=Object.assign({cliente:1,credito:1,pago:1,gasto:1,aporte:1},ni||{});
-  }catch(e){DB.nextIds={cliente:1,credito:1,pago:1,gasto:1,aporte:1};}
-  ['cliente','credito','pago','gasto','aporte'].forEach(function(k){if(!DB.nextIds[k])DB.nextIds[k]=1;});
+    DB.nextIds=Object.assign({cliente:1,credito:1,pago:1,gasto:1,aporte:1,castigo:1,producto:1,entrada:1,venta:1,proveedor:1},ni||{});
+  }catch(e){DB.nextIds={cliente:1,credito:1,pago:1,gasto:1,aporte:1,castigo:1,producto:1,entrada:1,venta:1,proveedor:1};}
+  ['cliente','credito','pago','gasto','aporte','castigo','producto','entrada','venta','proveedor'].forEach(function(k){if(!DB.nextIds[k])DB.nextIds[k]=1;});
   DB.creditos=DB.creditos.filter(function(c){return c&&c.id&&c.clienteId&&c.monto;});
   DB.pagos   =DB.pagos.filter(function(p){return p&&p.id&&p.creditoId&&p.monto;});
   DB.clientes=DB.clientes.filter(function(c){return c&&c.id&&c.nombre;});
@@ -1356,7 +1367,7 @@ function auditEdit(obj){
 // ─────────────────────────────────────────────────────────────────────────────
 function saveAll(){
   if(!CARTERA_ID)return;
-  ['clientes','creditos','pagos','gastos','aportes','nextIds'].forEach(k=>lsSet(pfx(k),DB[k]));
+  ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds'].forEach(k=>lsSet(pfx(k),DB[k]));
   if(GD.isConnected()) GD.fullSync(CARTERA_ID);
   showSaveMsg();
 }
@@ -1845,7 +1856,7 @@ function doLogout(){
 // ══════════════════════════════════════════════════════
 const RENDERS={dashboard:renderDashboard,clientes:renderClientes,
   creditos:renderCreditos,cobros:renderCobros,caja:renderCaja,
-  analisis:renderAnalisis,datos:()=>{renderDatos();mostrarEstadoCarpeta();},usuarios:renderUsuarios};
+  analisis:renderAnalisis,almacen:renderAlmacen,datos:()=>{renderDatos();mostrarEstadoCarpeta();},usuarios:renderUsuarios};
 // ══ Iconos monocromáticos (estilo panel principal) ══
 const ICN = {
   card:'<path d="M2.3 6.5h19.4a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2.3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M1.3 9.7h21.4"/><path d="M4.5 14.4h4"/>',
@@ -1867,7 +1878,14 @@ const ICN = {
   wallet:'<rect x="2.3" y="6.5" width="19.4" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/>',
   gear:'<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.1 5.9l-1.7 1.7M7.6 16.5l-1.7 1.7M18.1 18.1l-1.7-1.7M7.6 7.5 5.9 5.8"/>',
   grid:'<rect x="3" y="3" width="7" height="9" rx="1.6"/><rect x="14" y="3" width="7" height="5" rx="1.6"/><rect x="14" y="12" width="7" height="9" rx="1.6"/><rect x="3" y="16" width="7" height="5" rx="1.6"/>',
-  swap:'<path d="M8 3v14"/><path d="M4.2 7.2 8 3l3.8 4.2"/><path d="M16 21V7"/><path d="M12.2 16.8 16 21l3.8-4.2"/>'
+  swap:'<path d="M8 3v14"/><path d="M4.2 7.2 8 3l3.8 4.2"/><path d="M16 21V7"/><path d="M12.2 16.8 16 21l3.8-4.2"/>',
+  trash:'<path d="M4 7h16"/><path d="M9 7V4.8A1 1 0 0 1 10 3.8h4a1 1 0 0 1 1 1V7"/><path d="M6 7l1 13a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9L18 7"/><line x1="10" y1="11" x2="10" y2="16.5"/><line x1="14" y1="11" x2="14" y2="16.5"/>',
+  box:'<path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5z"/><path d="M3 8.5v7L12 20l9-4.5v-7"/><line x1="12" y1="13" x2="12" y2="20"/>',
+  tag:'<path d="M11.5 3.5H5.5a2 2 0 0 0-2 2v6l10.5 10.5a2 2 0 0 0 2.8 0l6-6a2 2 0 0 0 0-2.8L11.5 3.5z"/><circle cx="8" cy="8" r="1.4" fill="currentColor" stroke="none"/>',
+  'inbox-in':'<path d="M4 4.5h6l1.5 3H20v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><line x1="4" y1="14.5" x2="9" y2="14.5"/><line x1="15" y1="14.5" x2="20" y2="14.5"/><polyline points="9.5,9.5 12,12 14.5,9.5"/><line x1="12" y1="12" x2="12" y2="5.5"/>',
+  'inbox-out':'<path d="M4 4.5h6l1.5 3H20v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><line x1="4" y1="14.5" x2="9" y2="14.5"/><line x1="15" y1="14.5" x2="20" y2="14.5"/><polyline points="9.5,7.5 12,5 14.5,7.5"/><line x1="12" y1="5" x2="12" y2="11.5"/>',
+  truck:'<rect x="1.5" y="7" width="12" height="9.5" rx="1"/><path d="M13.5 10h4.2l3.3 3.5v3H13.5z"/><circle cx="5.5" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>',
+  scale:'<line x1="12" y1="3" x2="12" y2="21"/><line x1="4" y1="7" x2="20" y2="7"/><path d="M4 7 1.5 13a2.5 2.5 0 0 0 5 0z"/><path d="M20 7l2.5 6a2.5 2.5 0 0 1-5 0z"/><path d="M8 21h8"/>'
 };
 function ico3d(name){return '<span class="ico3d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(ICN[name]||'')+'</svg></span>';}
 function pageIco(name){return '<span class="page-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+(ICN[name]||'')+'</svg></span>';}
@@ -1882,6 +1900,7 @@ const NAV_SUBMENUS = {
   cobros:{setter:'setCobrosSubTab', prefix:'cob-stab-', items:[
     {id:'cobros', icon:'card', label:'Cobros', sub:'Registro e historial'},
     {id:'refinanciacion', icon:'refresh', label:'Refinanciación', sub:'Reestructurar crédito'},
+    {id:'castigo', icon:'trash', label:'Castigo de Cartera', sub:'Dar de baja crédito'},
     {id:'estado', icon:'doc', label:'Estado de Cuenta', sub:'Extracto por crédito'},
     {id:'proyeccion', icon:'calendar', label:'Proyección', sub:'Cobros futuros'}
   ]},
@@ -1900,6 +1919,14 @@ const NAV_SUBMENUS = {
     {id:'intereses', icon:'trend', label:'Intereses', sub:'Recaudados vs Pendientes'},
     {id:'capital2', realId:'capital', icon:'building', label:'Capital de Trabajo', sub:'Desplegado vs Caja'},
     {id:'rendimiento', icon:'trend', label:'Rendimiento', sub:'Retorno sobre Capital'}
+  ]},
+  almacen:{setter:'setAlmacenSubTab', prefix:'alm-stab-', items:[
+    {id:'productos', icon:'tag', label:'Insumos y Equipos', sub:'Catálogo de productos'},
+    {id:'proveedores', icon:'truck', label:'Proveedores', sub:'Catálogo de proveedores'},
+    {id:'inventario', icon:'box', label:'Inventario', sub:'Existencias actuales'},
+    {id:'entradas', icon:'inbox-in', label:'Entradas', sub:'Ingreso de mercancía'},
+    {id:'ventas', icon:'inbox-out', label:'Ventas', sub:'Salida de almacén'},
+    {id:'balance', icon:'scale', label:'Balance Almacén', sub:'Compras, ventas y utilidad'}
   ]}
 };
 
@@ -1961,6 +1988,7 @@ function switchTab(id,btn){
     if(id==='cobros') setCobrosSubTab(_cobrosSubTab||'cobros');
     if(id==='clientes') setClientesSubTab(_clientesSubTab||'lista');
     if(id==='caja') setCajaSubTab(_cajaSubTab||'resumen');
+    if(id==='almacen') setAlmacenSubTab(_almacenSubTab||'productos');
     // analisis se auto-sincroniza al final de renderAnalisis()
   }catch(e){
     console.error('Error rendering tab '+id+':', e);
@@ -2027,12 +2055,12 @@ function askConfirm(opts){
   var cb=opts.cb||null;
   confirmModalCallback=cb;
   confirmModalExpected=esperado;
-  document.getElementById('confirm-modal-title').textContent=titulo;
-  document.getElementById('confirm-modal-desc').textContent=desc;
+  document.getElementById('confirm-modal-title').innerHTML=titulo;
+  document.getElementById('confirm-modal-desc').innerHTML=desc;
   document.getElementById('confirm-modal-label').textContent=labelInput;
   document.getElementById('confirm-modal-input').value='';
   document.getElementById('confirm-modal-err').textContent='';
-  document.getElementById('confirm-modal-btn').textContent=btnTexto;
+  document.getElementById('confirm-modal-btn').innerHTML=btnTexto;
   var wrap=document.getElementById('confirm-modal-input-wrap');
   wrap.style.display=esperado!==null?'':'none';
   document.getElementById('confirm-modal').classList.remove('hidden');
@@ -2082,8 +2110,9 @@ function pedirEliminarCartera(){
         cb: ()=>{
           // Ejecutar borrado
           DB.clientes=[]; DB.creditos=[]; DB.pagos=[];
-          DB.gastos=[];   DB.aportes=[];
-          DB.nextIds={cliente:1,credito:1,pago:1,gasto:1,aporte:1};
+          DB.gastos=[];   DB.aportes=[];  DB.castigos=[];
+          DB.productos=[]; DB.entradas=[]; DB.ventas=[]; DB.proveedores=[];
+          DB.nextIds={cliente:1,credito:1,pago:1,gasto:1,aporte:1,castigo:1,producto:1,entrada:1,venta:1,proveedor:1};
           saveAll();
           alert(`Todos los datos de la cartera "${CARTERA_NOMBRE}" han sido eliminados.`);
           renderDatos();
@@ -2119,7 +2148,7 @@ function pedirEliminarTodo(){
         cb: ()=>{
           // Borrar todas las carteras
           GLOBAL.carteras.forEach(c=>{
-            ['clientes','creditos','pagos','gastos','aportes','nextIds'].forEach(k=>{
+            ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds'].forEach(k=>{
               try{localStorage.removeItem(`cc_${c.id}_${k}`)}catch{}
             });
           });
@@ -2182,8 +2211,11 @@ function computeDashboardStats(desde, hasta){
   const saldoCapital=capitalCartera-recaudoCapital; // puede ser negativo si se prestó más que el capital
   const saldoIntereses=(interesesCartera+totalMora)-recaudoInteresesMora;
   const totalSaldo=saldoCapital+saldoIntereses;
+  // Capital real de la cartera: lo que efectivamente se ha aportado (menos castigos, cuando existan),
+  // independiente de cuántas veces ese mismo capital se ha vuelto a prestar al recircular.
+  const capitalBase=computeCaja().capitalNeto;
   return {capitalCartera,interesesCartera,totalCartera,recaudoCapital,recaudoInteresesMora,totalRecaudo,
-    saldoCapital,saldoIntereses,totalSaldo,activosCount:creditosFiltrados.length,creditosEnMora,cuotasVencidas,totalMora};
+    saldoCapital,saldoIntereses,totalSaldo,activosCount:creditosFiltrados.length,creditosEnMora,cuotasVencidas,totalMora,capitalBase};
 }
 function applyDashboardFiltro(){
   const desde=gVal('dash-desde')||'';
@@ -2195,10 +2227,11 @@ function applyDashboardFiltro(){
   if(!kpiWrap)return;
   kpiWrap.innerHTML=`
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7.5" width="19" height="12" rx="1.6"/><path d="M8.5 7.5V5.8a1.3 1.3 0 0 1 1.3-1.3h4.4a1.3 1.3 0 0 1 1.3 1.3V7.5"/><line x1="2.5" y1="13" x2="21.5" y2="13"/></svg></i> Cartera Total (proyectada)</div>
-    <div class="grid3" style="margin-bottom:22px">
-      ${statCard('<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital Total Prestado',fmt(s.capitalCartera),'#1A3260','Capital original de todos los créditos activos')}
+    <div class="grid4" style="margin-bottom:22px">
+      ${statCard('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital de la Cartera',fmt(s.capitalBase),'#1A7A4A','Capital neto aportado (aportes − castigos de cartera)')}
+      ${statCard('<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital Acumulado Prestado',fmt(s.capitalCartera),'#1A3260','Suma histórica del capital de créditos activos (un mismo capital recirculado se cuenta cada vez que se vuelve a prestar)')}
       ${statCard('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg></i>','Intereses Proyectados',fmt(s.interesesCartera),'#C9A84C','Total de intereses si todos los créditos se pagan completos')}
-      ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Cartera Total Proyectada',fmt(s.totalCartera),'#0F2044','Capital + Intereses proyectados')}
+      ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Cartera Total Proyectada',fmt(s.totalCartera),'#0F2044','Capital acumulado + Intereses proyectados')}
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Recaudo Acumulado</div>
     <div class="grid3" style="margin-bottom:22px">
@@ -2260,10 +2293,11 @@ function renderDashboard(){
 
     <div id="dash-kpis">
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7.5" width="19" height="12" rx="1.6"/><path d="M8.5 7.5V5.8a1.3 1.3 0 0 1 1.3-1.3h4.4a1.3 1.3 0 0 1 1.3 1.3V7.5"/><line x1="2.5" y1="13" x2="21.5" y2="13"/></svg></i> Cartera Total (proyectada)</div>
-    <div class="grid3" style="margin-bottom:22px">
-      ${statCard('<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital Total Prestado',fmt(s.capitalCartera),'#1A3260','Capital original de todos los créditos activos')}
+    <div class="grid4" style="margin-bottom:22px">
+      ${statCard('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital de la Cartera',fmt(s.capitalBase),'#1A7A4A','Capital neto aportado (aportes − castigos de cartera)')}
+      ${statCard('<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital Acumulado Prestado',fmt(s.capitalCartera),'#1A3260','Suma histórica del capital de créditos activos (un mismo capital recirculado se cuenta cada vez que se vuelve a prestar)')}
       ${statCard('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg></i>','Intereses Proyectados',fmt(s.interesesCartera),'#C9A84C','Total de intereses si todos los créditos se pagan completos')}
-      ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Cartera Total Proyectada',fmt(s.totalCartera),'#0F2044','Capital + Intereses proyectados')}
+      ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Cartera Total Proyectada',fmt(s.totalCartera),'#0F2044','Capital acumulado + Intereses proyectados')}
     </div>
     <div style="font-weight:700;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Recaudo Acumulado</div>
     <div class="grid3" style="margin-bottom:22px">
@@ -2761,7 +2795,7 @@ function exportResumenCredito(credId){
       fmtNum(Math.round(f.interesesCorrientes)),
       fmtNum(Math.round(f.moraTotal||0)),
       fmtNum(Math.round(f.totalACobrar)),
-      f.estado==='pagada'?'<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Pagada':f.estado==='vencida'?'Vencida':f.estado==='parcial'?'Parcial':'Pendiente'
+      f.estado==='pagada'?'Pagada':f.estado==='vencida'?'Vencida':f.estado==='parcial'?'Parcial':'Pendiente'
     ];
   });
 
@@ -3068,7 +3102,9 @@ function buildCreditoRows(lista,h){
     const filas=calcEstadoReal(c,DB.pagos,c.tasaMoraDiaria,h);
     const conMora=filas.some(f=>f.moraTotal>0&&f.estado!=='pagada');
     const conParcial=filas.some(f=>f.estado==='parcial'||f.estado==='parcial_vencida');
-    const estadoBadge=conMora?badge('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Con mora','mora'):conParcial?badge('Pago parcial','yellow'):badge('Al día','green');
+    const estadoBadge=c.estado==='castigado'?badge('Castigado','red')
+      :c.estado==='reestructurado'?badge('Reestructurado','gray')
+      :conMora?badge('Con mora','mora'):conParcial?badge('Pago parcial','yellow'):badge('Al día','green');
     return`<tr>
       <td style="color:var(--muted)">#${c.id}</td>
       <td><strong>${esc((cli&&cli.nombre))}</strong></td>
@@ -3127,7 +3163,7 @@ function renderCreditos(){
       const filas=calcEstadoReal(cred,DB.pagos,cred.tasaMoraDiaria,h);
       const aRows=filas.map(f=>{
         const bg=f.estado==='pagada'?'#F6FDF9':f.estado==='vencida'?'#FFF0F0':f.estado==='parcial_vencida'?'#FDF0FF':f.estado==='parcial'?'#FFFDF0':'';
-        const estBadge=f.estado==='pagada'?badge('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Pagada','green'):f.estado==='vencida'?badge('Vencida','red'):f.estado==='parcial'?badge('Parcial','yellow'):f.estado==='parcial_vencida'?badge('Parcial+Mora','mora'):badge('Pendiente','gray');
+        const estBadge=f.estado==='pagada'?badge('Pagada','green'):f.estado==='vencida'?badge('Vencida','red'):f.estado==='parcial'?badge('Parcial','yellow'):f.estado==='parcial_vencida'?badge('Parcial+Mora','mora'):badge('Pendiente','gray');
         return`<tr style="background:${bg}">
           <td style="font-weight:700">#${f.cuota}</td><td>${fmtDate(f.fechaVencimiento)}</td>
           <td style="font-weight:600">${fmt(f.valorCuotaBase)}</td>
@@ -4046,6 +4082,17 @@ function renderCobros(){
           </div>
         </div>
 
+        <!-- ════ PANEL: CASTIGO DE CARTERA ════ -->
+        <div id="cob-panel-castigo" style="display:none">
+          <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#fff0ee,#fff)">
+            <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:2px"><i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4.8A1 1 0 0 1 10 3.8h4a1 1 0 0 1 1 1V7"/><path d="M6 7l1 13a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9L18 7"/><line x1="10" y1="11" x2="10" y2="16.5"/><line x1="14" y1="11" x2="14" y2="16.5"/></svg></i> Castigo de Cartera</div>
+            <div style="font-size:11.5px;color:var(--muted)">Da de baja un crédito incobrable: el capital pendiente se pierde y se resta del capital neto de la cartera</div>
+          </div>
+          <div id="cob-castigo-body" style="padding:20px 24px">
+            <div style="color:var(--muted);font-size:12px">Cargando...</div>
+          </div>
+        </div>
+
         <!-- ════ PANEL: ESTADO DE CUENTA ════ -->
         <div id="cob-panel-estado" style="display:none">
           <div id="cob-estado-content"></div>
@@ -4256,7 +4303,7 @@ function onCobroCreditoChange(){
   const sel=document.getElementById('cobro-cuota');
   sel.innerHTML='<option value="">Seleccione cuota</option>'+filas.map(f=>{
     let label=`Cuota #${f.cuota} — Vence ${fmtDate(f.fechaVencimiento)}`;
-    if(f.estado==='vencida')label+=' <i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> VENCIDA';
+    if(f.estado==='vencida')label+=' VENCIDA';
     if(f.estado==='parcial'||f.estado==='parcial_vencida')label+=' (parcial)';
     label+=` — Total: ${fmt(f.totalACobrar)}`;
     return`<option value="${f.cuota}">${label}</option>`;
@@ -4726,7 +4773,7 @@ function renderEstadoDetalle(){
       <td>—</td><td>—</td><td>—</td></tr>`,
     ...filas.map(f=>{
       const bg=f.estado==='pagada'?'#F6FDF9':f.estado==='vencida'?'#FFF0F0':f.estado==='parcial_vencida'?'#FDF0FF':f.estado==='parcial'?'#FFFDF0':'';
-      const estBadge=f.estado==='pagada'?badge('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Pagada','green'):f.estado==='vencida'?badge('Vencida','red'):f.estado==='parcial'?badge('Parcial','yellow'):f.estado==='parcial_vencida'?badge('Parcial+Mora','mora'):badge('Pendiente','gray');
+      const estBadge=f.estado==='pagada'?badge('Pagada','green'):f.estado==='vencida'?badge('Vencida','red'):f.estado==='parcial'?badge('Parcial','yellow'):f.estado==='parcial_vencida'?badge('Parcial+Mora','mora'):badge('Pendiente','gray');
       const cobBadge=f.estado==='pagada'||f.totalPagadoCuota>0?badge('CUOTA','green'):f.moraTotal>0?badge('CUOTA','mora'):badge('CUOTA','gray');
       return`<tr style="background:${bg}">
         <td>${fmtDate(f.fechaVencimiento)}</td>
@@ -5064,15 +5111,19 @@ function renderCapitalDespliegue(){
 }
 
 function computeCaja(){
-  const totalDesembolsado=DB.creditos.reduce((a,c)=>a+c.monto,0);
+  const totalDesembolsado=DB.creditos.filter(function(c){return !c.origenAlmacen;}).reduce((a,c)=>a+c.monto,0);
   const totalRecaudado=DB.pagos.reduce((a,p)=>a+p.monto,0);
   const totalGastos=DB.gastos.reduce((a,g)=>a+g.monto,0);
   const totalAportes=DB.aportes.reduce((a,r)=>a+r.monto,0);
-  const saldoCaja=totalAportes+totalRecaudado-totalDesembolsado-totalGastos;
+  const totalCastigos=DB.castigos.reduce((a,x)=>a+x.capitalCastigado,0);
+  const capitalNeto=totalAportes-totalCastigos; // capital real de la cartera
+  const utilidadAlmacenContado=DB.ventas.filter(function(v){return v.tipoPago==='contado';}).reduce((a,v)=>a+(v.utilidad||0),0);
+  const saldoCaja=totalAportes+totalRecaudado-totalDesembolsado-totalGastos+utilidadAlmacenContado;
   // Fuente única: calcCapitalEnCaja para consistencia con Análisis y Movimientos
   var saldoCapCaja=calcCapitalEnCaja(null);
   var saldoIntCaja=Math.max(0,saldoCaja-saldoCapCaja);
-  return {totalDesembolsado,totalRecaudado,totalGastos,totalAportes,saldoCaja,saldoCapCaja,saldoIntCaja};
+  return {totalDesembolsado,totalRecaudado,totalGastos,totalAportes,totalCastigos,capitalNeto,
+    utilidadAlmacenContado,saldoCaja,saldoCapCaja,saldoIntCaja};
 }
 function buildMovimientosCaja(){
   const movs=[];
@@ -5081,7 +5132,7 @@ function buildMovimientosCaja(){
       desc:r.descripcion||'—',monto:r.monto,cat:'aporte',id:r.id,
       capMov:r.monto,intMov:0});
   });
-  DB.creditos.forEach(c=>{
+  DB.creditos.filter(function(c){return !c.origenAlmacen;}).forEach(c=>{
     const cli=DB.clientes.find(x=>x.id===c.clienteId);
     movs.push({fecha:c.fechaDesembolso,tipo:'<i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i> Crédito Entregado',
       desc:'Crédito #'+c.id+' — '+((cli&&cli.nombre)||'—')+' — '+(c.concepto||'Sin concepto'),
@@ -5700,9 +5751,128 @@ function mostrarModal(msg, tipo){
     +'background:'+bg+';color:'+color+';border:2px solid '+color+';border-radius:12px;'
     +'padding:14px 24px;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);'
     +'max-width:480px;text-align:center;';
-  div.textContent=msg;
+  div.innerHTML=msg;
   document.body.appendChild(div);
   setTimeout(function(){if(div.parentNode)div.remove();},3500);
+}
+
+// ══════════════════════════════════════════════════════
+// CASTIGO DE CARTERA — dar de baja un crédito incobrable
+// ══════════════════════════════════════════════════════
+function calcCapitalPendienteCredito(cred){
+  var filas=calcEstadoReal(cred,DB.pagos,cred.tasaMoraDiaria,hoy());
+  var capTotal=filas.reduce(function(a,f){return a+f.capitalCuota;},0);
+  var capAbonado=filas.reduce(function(a,f){return a+f.capitalAbonado;},0);
+  return Math.max(0,Math.round(capTotal-capAbonado));
+}
+function renderCastigoPanel(){
+  var wrap=document.getElementById('cob-castigo-body');
+  if(!wrap)return;
+  var h=hoy();
+  var credActivos=DB.creditos.filter(function(c){return c.estado==='activo';});
+
+  var histRows=[...DB.castigos].reverse().map(function(x){
+    var cred=DB.creditos.find(function(c){return c.id===x.creditoId;});
+    var cli=cred?DB.clientes.find(function(cl){return cl.id===cred.clienteId;}):null;
+    return '<tr><td>'+fmtDate(x.fecha)+'</td><td>#'+x.creditoId+'</td><td>'+esc(cli?cli.nombre:'—')+'</td>'
+      +'<td style="font-weight:700;color:#C0392B">'+fmt(x.capitalCastigado)+'</td>'
+      +'<td>'+esc(x.motivo||'—')+'</td></tr>';
+  }).join('');
+  var totalCastigado=DB.castigos.reduce(function(a,x){return a+x.capitalCastigado;},0);
+
+  var optsCast=credActivos.map(function(c){
+    var cli=DB.clientes.find(function(x){return x.id===c.clienteId;})||{};
+    var capPend=calcCapitalPendienteCredito(c);
+    return '<option value="'+c.id+'">#'+c.id+' — '+esc(cli.nombre||'—')+' · Pendiente: '+fmt(capPend)+'</option>';
+  }).join('');
+
+  wrap.innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;margin-bottom:26px">'
+
+    +'<div class="card" style="margin-bottom:0">'
+    +'<div class="card-header"><span class="card-title"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h9l4 4V21a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1z"/><path d="M15 2.8V7h4.2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15.5" x2="16" y2="15.5"/><line x1="8" y1="19" x2="13" y2="19"/></svg></i> Seleccionar Crédito</span></div>'
+    +'<div class="card-body" style="padding:14px 16px">'
+    +(credActivos.length
+      ? '<div class="field" style="margin-bottom:12px"><label>Crédito a castigar</label>'
+        +'<select id="castigo-cred" onchange="onCastigoCredChange()" style="width:100%">'
+        +'<option value="">— Seleccione un crédito —</option>'+optsCast
+        +'</select></div>'
+        +'<div id="castigo-resumen"></div>'
+      : '<div style="color:var(--muted);font-size:12px;padding:20px 0;text-align:center">No hay créditos activos disponibles para castigar.</div>')
+    +'</div></div>'
+
+    +'<div class="card" style="margin-bottom:0;min-height:200px">'
+    +'<div class="card-header"><span class="card-title"><i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Confirmar Castigo</span></div>'
+    +'<div class="card-body" style="padding:14px 16px" id="castigo-form-body">'
+    +'<div style="color:var(--muted);font-size:12px;padding:20px 0">Selecciona un crédito para ver el capital pendiente y confirmar el castigo.</div>'
+    +'</div></div>'
+
+    +'</div>'
+
+    +'<div class="card" style="margin-bottom:0">'
+    +'<div class="card-header"><span class="card-title"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h9l4 4V21a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1z"/><path d="M15 2.8V7h4.2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15.5" x2="16" y2="15.5"/><line x1="8" y1="19" x2="13" y2="19"/></svg></i> Historial de Castigos</span>'
+    +'<span class="badge" style="font-size:11px;background:#FFF0EE;color:#C0392B;border:1px solid #C0392B">Total: '+fmt(totalCastigado)+'</span></div>'
+    +'<div class="card-body" style="padding:0">'
+    +(DB.castigos.length
+      ? '<div style="overflow-x:auto"><table class="table"><thead><tr>'
+        +'<th>Fecha</th><th>Crédito</th><th>Cliente</th><th>Capital Castigado</th><th>Motivo</th>'
+        +'</tr></thead><tbody>'+histRows+'</tbody></table></div>'
+      : '<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Aún no se han registrado castigos de cartera.</div>')
+    +'</div></div>';
+}
+function onCastigoCredChange(){
+  var sel=document.getElementById('castigo-cred');
+  var formBody=document.getElementById('castigo-form-body');
+  var resumen=document.getElementById('castigo-resumen');
+  if(!sel||!sel.value){
+    if(resumen)resumen.innerHTML='';
+    if(formBody)formBody.innerHTML='<div style="color:var(--muted);font-size:12px;padding:20px 0">Selecciona un crédito para ver el capital pendiente y confirmar el castigo.</div>';
+    return;
+  }
+  var credId=+sel.value;
+  var c=DB.creditos.find(function(x){return x.id===credId;});
+  if(!c)return;
+  var cli=DB.clientes.find(function(x){return x.id===c.clienteId;})||{};
+  var h=hoy();
+  var filas=calcEstadoReal(c,DB.pagos,c.tasaMoraDiaria,h);
+  var mora=filas.reduce(function(a,f){return f.estado!=='pagada'?a+f.moraTotal:a;},0);
+  var cuotasPend=filas.filter(function(f){return f.estado!=='pagada';}).length;
+  var capPend=calcCapitalPendienteCredito(c);
+
+  resumen.innerHTML=
+    '<div style="background:#fafbff;border:1px solid var(--border);border-radius:9px;padding:12px 14px;font-size:12px;display:flex;flex-direction:column;gap:6px">'
+    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cliente</span><strong>'+esc(cli.nombre||'—')+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Monto original</span><strong>'+fmt(c.monto)+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cuotas pendientes</span><strong>'+cuotasPend+'</strong></div>'
+    +'<div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Mora acumulada</span><strong style="color:'+(mora>0?'#C0392B':'inherit')+'">'+fmt(mora)+'</strong></div>'
+    +'</div>';
+
+  formBody.innerHTML=
+    '<div style="background:#FFF6F5;border:1px solid #F3C6C0;border-radius:9px;padding:12px 14px;margin-bottom:14px">'
+    +'<div style="font-size:11px;color:var(--muted);margin-bottom:2px">Capital que se perderá al castigar</div>'
+    +'<div style="font-size:22px;font-weight:800;color:#C0392B">'+fmt(capPend)+'</div>'
+    +'</div>'
+    +'<div class="field" style="margin-bottom:14px"><label>Motivo del castigo</label>'
+    +'<textarea id="castigo-motivo" rows="3" placeholder="Ej: Cliente en incumplimiento total, sin ubicación, gestión de cobro agotada..." style="width:100%"></textarea></div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-bottom:12px"><i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Esta acción no se puede deshacer. El crédito quedará marcado como castigado y '+fmt(capPend)+' se restará del capital neto de la cartera.</div>'
+    +'<button class="btn" style="background:#C0392B;color:#fff;width:100%" onclick="confirmarCastigo('+credId+')"><i class="ico-i" style="color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4.8A1 1 0 0 1 10 3.8h4a1 1 0 0 1 1 1V7"/><path d="M6 7l1 13a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9L18 7"/><line x1="10" y1="11" x2="10" y2="16.5"/><line x1="14" y1="11" x2="14" y2="16.5"/></svg></i> Castigar Crédito</button>';
+}
+function confirmarCastigo(credId){
+  var c=DB.creditos.find(function(x){return x.id===credId;});
+  if(!c)return;
+  var capPend=calcCapitalPendienteCredito(c);
+  var motivo=(gVal('castigo-motivo')||'').trim();
+  if(!confirm('¿Confirmas castigar el crédito #'+credId+' por '+fmt(capPend)+'? Esta acción no se puede deshacer.'))return;
+  c.estado='castigado';
+  c.fechaCastigo=hoy();
+  DB.castigos.push({
+    id:DB.nextIds.castigo, creditoId:credId, fecha:hoy(), capitalCastigado:capPend,
+    motivo:motivo||'Sin motivo especificado', ...auditInfo('castigo de cartera')
+  });
+  DB.nextIds.castigo++;
+  save('creditos'); save('castigos'); save('nextIds');
+  mostrarModal('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Crédito #'+credId+' castigado. Se dio de baja '+fmt(capPend)+' del capital de la cartera.','ok');
+  renderCastigoPanel();
 }
 
 // ── Clientes sub-tab state ──
@@ -5724,15 +5894,16 @@ function setClientesSubTab(tab){
 var _cobrosSubTab = 'cobros';
 function setCobrosSubTab(tab){
   _cobrosSubTab = tab;
-  ['cobros','refinanciacion','estado','proyeccion'].forEach(function(t){
+  ['cobros','refinanciacion','castigo','estado','proyeccion'].forEach(function(t){
     var btn=document.getElementById('cob-stab-'+t);
     if(btn) btn.classList.toggle('active', t===tab);
   });
-  ['cobros','refinanciacion','estado','proyeccion'].forEach(function(t){
+  ['cobros','refinanciacion','castigo','estado','proyeccion'].forEach(function(t){
     var panel=document.getElementById('cob-panel-'+t);
     if(panel)panel.style.display=(t===tab)?'block':'none';
   });
   if(tab==='refinanciacion') renderRefinanciacionPanel();
+  if(tab==='castigo') renderCastigoPanel();
   if(tab==='estado') renderEstadoInline();
   if(tab==='proyeccion') renderProyeccionCobros();
 }
@@ -5837,20 +6008,29 @@ function renderCaja(){
           </div>
           <div style="padding:22px 24px;display:flex;flex-direction:column;gap:20px">
             <!-- Fila 1: KPIs principales -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
               ${statCard('<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Total Capital Aportado',fmt(c.totalAportes),'#1A7A4A')}
+              ${statCard('<i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></i>','Castigos de Cartera',fmt(c.totalCastigos),c.totalCastigos>0?'#C0392B':'#1A3260','Capital dado de baja por créditos incobrables')}
+              ${statCard('<i class="ico-i" style="color:#1A7A4A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Capital Neto de la Cartera',fmt(c.capitalNeto),'#1A7A4A','Aportes menos castigos: el capital real disponible')}
               ${statCard('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i>','Total Cobros Recibidos',fmt(c.totalRecaudado),'#1A7A4A')}
-              ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Saldo en Caja',fmt(c.saldoCaja),c.saldoCaja>=0?'#1A3260':'#C0392B')}
+            </div>
+            <!-- Fila 1b: Almacén -->
+            <div style="display:grid;grid-template-columns:1fr 3fr;gap:14px">
+              ${statCard('<i class="ico-i" style="color:#1A7A4A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.3" y="6.5" width="19.4" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg></i>','Utilidad de Almacén (Contado)',fmt(c.utilidadAlmacenContado),'#1A7A4A','Ya incluida en el Saldo en Caja · ventas a crédito se realizan al cobrarse')}
             </div>
             <!-- Fila 2: Egresos -->
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+              ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Saldo en Caja',fmt(c.saldoCaja),c.saldoCaja>=0?'#1A3260':'#C0392B')}
               ${statCard('<i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 15.2c0 1 1.1 1.8 2.7 1.8s2.7-.8 2.7-1.8-1.1-1.5-2.7-1.8-2.7-.8-2.7-1.8 1.1-1.8 2.7-1.8 2.7.8 2.7 1.8"/><line x1="12" y1="6.6" x2="12" y2="7.8"/><line x1="12" y1="16.2" x2="12" y2="17.4"/></svg></i>','Total Créditos Entregados',fmt(c.totalDesembolsado),'#C0392B')}
               ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2.8h14v18.4l-2.3-1.5-2.3 1.5-2.4-1.5-2.4 1.5-2.3-1.5-2.3 1.5V2.8z"/><line x1="8" y1="7.5" x2="16" y2="7.5"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="14.5" x2="13" y2="14.5"/></svg></i>','Total Gastos Registrados',fmt(c.totalGastos),'#7B2D8B')}
+            </div>
+            <!-- Fila 3: Capital en caja -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
               <div style="display:flex;flex-direction:column;gap:10px">
                 ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5"/><line x1="4.5" y1="10.5" x2="19.5" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="18.5"/><line x1="10" y1="10.5" x2="10" y2="18.5"/><line x1="14" y1="10.5" x2="14" y2="18.5"/><line x1="18.5" y1="10.5" x2="18.5" y2="18.5"/><line x1="3.5" y1="19.5" x2="20.5" y2="19.5"/></svg></i>','Capital en Caja',fmt(c.saldoCapCaja),'#1A3260','Capital prestado que retornó y está disponible')}
               </div>
             </div>
-            <!-- Fila 3: Desglose intereses -->
+            <!-- Fila 4: Desglose intereses -->
             <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px">
               ${statCard('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg></i>','Intereses en Caja',fmt(c.saldoIntCaja),c.saldoIntCaja>=0?'#B07D12':'#C0392B','Intereses y mora cobrados, neto de gastos')}
               <!-- Barra visual de composición -->
@@ -6918,6 +7098,881 @@ function renderAnalisis(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+// ALMACÉN — insumos/equipos, inventario, entradas y ventas
+// ══════════════════════════════════════════════════════════════════════════════
+function calcInventario(){
+  var map={};
+  DB.productos.forEach(function(p){map[p.id]={producto:p,entradas:0,ventas:0,stock:0};});
+  DB.entradas.forEach(function(e){if(map[e.productoId])map[e.productoId].entradas+=e.cantidad;});
+  DB.ventas.forEach(function(v){if(map[v.productoId])map[v.productoId].ventas+=v.cantidad;});
+  Object.keys(map).forEach(function(k){map[k].stock=map[k].entradas-map[k].ventas;});
+  return map;
+}
+
+function renderAlmacen(){
+  var inv=calcInventario();
+  var totalUnidades=DB.productos.reduce(function(a,p){return a+(inv[p.id]?inv[p.id].stock:0);},0);
+  var valorInventario=DB.productos.reduce(function(a,p){var m=inv[p.id];return a+(m?m.stock*p.valorTotal:0);},0);
+  var totalVentas=DB.ventas.reduce(function(a,v){return a+v.valorTotalVenta;},0);
+
+  document.getElementById('tab-almacen').innerHTML=`
+    <div class="page-title">${pageIco('box')} Almacén</div>
+    <div class="page-sub">Insumos, equipos, entradas y ventas de almacén · Secciones en el panel izquierdo</div>
+
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;box-shadow:var(--shadow-sm)">
+        <span style="font-size:11px;color:var(--muted)">Insumos registrados</span>
+        <span style="font-size:14px;font-weight:800;color:var(--ok)">${DB.productos.length}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;box-shadow:var(--shadow-sm)">
+        <span style="font-size:11px;color:var(--muted)">Unidades en stock</span>
+        <span style="font-size:14px;font-weight:800;color:var(--ok)">${totalUnidades}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;box-shadow:var(--shadow-sm)">
+        <span style="font-size:11px;color:var(--muted)">Valor del inventario</span>
+        <span style="font-size:14px;font-weight:800;color:var(--ok)">${fmt(valorInventario)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;box-shadow:var(--shadow-sm)">
+        <span style="font-size:11px;color:var(--muted)">Total vendido</span>
+        <span style="font-size:14px;font-weight:800;color:var(--ok)">${fmt(totalVentas)}</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:0;align-items:flex-start;min-height:600px">
+      <div style="flex:1;min-width:0;background:var(--surface);border-radius:14px;
+                  border:1px solid var(--border);box-shadow:0 2px 8px rgba(15,32,68,.06);overflow:hidden">
+        <div id="alm-panel-productos" style="display:none"><div id="alm-productos-body"></div></div>
+        <div id="alm-panel-proveedores" style="display:none"><div id="alm-proveedores-body"></div></div>
+        <div id="alm-panel-inventario" style="display:none"><div id="alm-inventario-body"></div></div>
+        <div id="alm-panel-entradas" style="display:none"><div id="alm-entradas-body"></div></div>
+        <div id="alm-panel-ventas" style="display:none"><div id="alm-ventas-body"></div></div>
+        <div id="alm-panel-balance" style="display:none"><div id="alm-balance-body"></div></div>
+      </div>
+    </div>`;
+}
+
+var _almacenSubTab='productos';
+function setAlmacenSubTab(tab){
+  _almacenSubTab=tab;
+  ['productos','proveedores','inventario','entradas','ventas','balance'].forEach(function(t){
+    var btn=document.getElementById('alm-stab-'+t);
+    if(btn) btn.classList.toggle('active', t===tab);
+  });
+  ['productos','proveedores','inventario','entradas','ventas','balance'].forEach(function(t){
+    var panel=document.getElementById('alm-panel-'+t);
+    if(panel) panel.style.display=(t===tab)?'block':'none';
+  });
+  if(tab==='productos') renderProductosPanel();
+  if(tab==='proveedores') renderProveedoresPanel();
+  if(tab==='inventario') renderInventarioPanel();
+  if(tab==='entradas') renderEntradasPanel();
+  if(tab==='ventas') renderVentasPanel();
+  if(tab==='balance') renderBalanceAlmacenPanel();
+}
+
+// ── Insumos y Equipos ──────────────────────────────────────────────────────
+function renderProductosPanel(){
+  var wrap=document.getElementById('alm-productos-body');
+  if(!wrap) return;
+  var inv=calcInventario();
+  var rows=DB.productos.slice().reverse().map(function(p){
+    var m=inv[p.id]; var stock=m?m.stock:0;
+    return '<tr><td>#'+p.id+'</td><td>'+esc(p.descripcion)+'</td><td>'+fmt(p.valorBase)+'</td>'
+      +'<td>'+(p.ivaPorcentaje>0?p.ivaPorcentaje+'%':'—')+'</td>'
+      +'<td style="font-weight:700">'+fmt(p.valorTotal)+'</td>'
+      +'<td style="font-weight:700;color:'+(stock<=0?'#C0392B':'#1A7A4A')+'">'+stock+' und.</td>'
+      +'<td style="white-space:nowrap">'
+      +'<button class="btn btn-secondary btn-sm" onclick="editarProducto('+p.id+')">Editar</button> '
+      +'<button class="btn btn-sm" style="background:#C0392B;color:#fff" onclick="eliminarProducto('+p.id+')">Eliminar</button>'
+      +'</td></tr>';
+  }).join('');
+
+  wrap.innerHTML=
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff)">'
+    +'<div style="font-size:15px;font-weight:800">Insumos y Equipos</div>'
+    +'<div style="font-size:11.5px;color:var(--muted)">Catálogo de productos que ingresan y se venden desde el almacén</div>'
+    +'</div>'
+    +'<div style="padding:20px 24px">'
+    +'<div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Registrar Insumo / Equipo</span></div>'
+    +'<div class="card-body"><div class="grid3">'
+    +'<div class="field col-span2"><label>Descripción *</label><input id="prod-desc" type="text" placeholder="Ej: Cable UTP Cat6 caja x305m" style="width:100%"/></div>'
+    +'<div class="field"><label>Valor Base *</label><input id="prod-base" type="number" min="0" oninput="onProdBaseIvaChange()" style="width:100%"/></div>'
+    +'<div class="field"><label style="display:flex;align-items:center;gap:6px"><input id="prod-iva-check" type="checkbox" onchange="onProdIvaToggle()" style="width:auto"/> ¿Aplica IVA?</label></div>'
+    +'<div class="field"><label>% IVA</label><input id="prod-iva-pct" type="number" min="0" step="0.1" value="19" disabled oninput="onProdBaseIvaChange()" style="width:100%"/></div>'
+    +'<div class="field"><label>Valor Total</label><input id="prod-total" type="text" readonly value="'+fmt(0)+'" style="width:100%;font-weight:800;background:var(--bg)"/></div>'
+    +'</div>'
+    +'<button class="btn btn-primary" onclick="saveProducto()" style="margin-top:8px">+ Registrar Insumo</button>'
+    +'</div></div>'
+    +(rows
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>ID</th><th>Descripción</th><th>Valor Base</th><th>IVA</th><th>Valor Total</th><th>Stock</th><th>Acciones</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Aún no hay insumos registrados.</div>')
+    +'</div>';
+}
+function onProdIvaToggle(){
+  var chk=document.getElementById('prod-iva-check');
+  var ivaInput=document.getElementById('prod-iva-pct');
+  ivaInput.disabled=!chk.checked;
+  if(!chk.checked) ivaInput.value=0;
+  else if(+ivaInput.value===0) ivaInput.value=19;
+  onProdBaseIvaChange();
+}
+function onProdBaseIvaChange(){
+  var base=+gVal('prod-base')||0;
+  var chk=document.getElementById('prod-iva-check');
+  var pct=(chk&&chk.checked)?(+gVal('prod-iva-pct')||0):0;
+  document.getElementById('prod-total').value=fmt(Math.round(base*(1+pct/100)));
+}
+function saveProducto(){
+  var descripcion=gVal('prod-desc').trim();
+  var valorBase=+gVal('prod-base')||0;
+  var chk=document.getElementById('prod-iva-check');
+  var ivaPorcentaje=(chk&&chk.checked)?(+gVal('prod-iva-pct')||0):0;
+  if(!descripcion) return alert('Ingresa la descripción del insumo');
+  if(valorBase<=0) return alert('El valor base debe ser mayor a cero');
+  var valorTotal=Math.round(valorBase*(1+ivaPorcentaje/100));
+  DB.productos.push(Object.assign({id:DB.nextIds.producto,descripcion:descripcion,valorBase:valorBase,
+    ivaPorcentaje:ivaPorcentaje,valorTotal:valorTotal},auditInfo('registro de insumo')));
+  DB.nextIds.producto++;
+  save('productos'); save('nextIds');
+  renderProductosPanel();
+}
+function eliminarProducto(id){
+  var p=DB.productos.find(function(x){return x.id===id;}); if(!p)return;
+  var inv=calcInventario()[id];
+  if(inv&&(inv.entradas>0||inv.ventas>0)){
+    alert('No se puede eliminar: este insumo ya tiene entradas o ventas registradas.');
+    return;
+  }
+  askAdmin('Eliminar insumo "'+p.descripcion+'"','Valor total: '+fmt(p.valorTotal),function(){
+    DB.productos=DB.productos.filter(function(x){return x.id!==id;});
+    save('productos'); renderProductosPanel();
+  });
+}
+function editarProducto(id){
+  var p=DB.productos.find(function(x){return x.id===id;}); if(!p)return;
+  var overlay=document.createElement('div');
+  overlay.id='edit-producto-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:#0006;z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML=
+    '<div style="background:#fff;border-radius:16px;padding:28px 28px 22px;max-width:480px;width:100%;box-shadow:0 8px 40px #0003">'
+    +'<div style="font-size:16px;font-weight:800;margin-bottom:16px">Editar Insumo</div>'
+    +'<div class="field" style="margin-bottom:12px"><label>Descripción</label><input id="ep-desc" type="text" value="'+esc(p.descripcion)+'" style="width:100%"/></div>'
+    +'<div class="field" style="margin-bottom:12px"><label>Valor Base</label><input id="ep-base" type="number" value="'+p.valorBase+'" style="width:100%" oninput="onEpChange()"/></div>'
+    +'<div class="field" style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:6px"><input id="ep-iva-check" type="checkbox" '+(p.ivaPorcentaje>0?'checked':'')+' onchange="onEpIvaToggle()" style="width:auto"/> ¿Aplica IVA?</label></div>'
+    +'<div class="field" style="margin-bottom:12px"><label>% IVA</label><input id="ep-iva-pct" type="number" step="0.1" value="'+(p.ivaPorcentaje||19)+'" '+(p.ivaPorcentaje>0?'':'disabled')+' style="width:100%" oninput="onEpChange()"/></div>'
+    +'<div class="field" style="margin-bottom:18px"><label>Valor Total</label><input id="ep-total" type="text" readonly value="'+fmt(p.valorTotal)+'" style="width:100%;font-weight:800;background:var(--bg)"/></div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+    +'<button class="btn btn-secondary" onclick="document.getElementById(\'edit-producto-overlay\').remove()">Cancelar</button>'
+    +'<button class="btn btn-primary" onclick="guardarEdicionProducto('+id+')">Guardar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+}
+function onEpIvaToggle(){
+  var chk=document.getElementById('ep-iva-check');
+  var ivaInput=document.getElementById('ep-iva-pct');
+  ivaInput.disabled=!chk.checked;
+  if(!chk.checked) ivaInput.value=0;
+  else if(+ivaInput.value===0) ivaInput.value=19;
+  onEpChange();
+}
+function onEpChange(){
+  var base=+gVal('ep-base')||0;
+  var chk=document.getElementById('ep-iva-check');
+  var pct=(chk&&chk.checked)?(+gVal('ep-iva-pct')||0):0;
+  document.getElementById('ep-total').value=fmt(Math.round(base*(1+pct/100)));
+}
+function guardarEdicionProducto(id){
+  var p=DB.productos.find(function(x){return x.id===id;}); if(!p)return;
+  var descripcion=gVal('ep-desc').trim();
+  var valorBase=+gVal('ep-base')||0;
+  var chk=document.getElementById('ep-iva-check');
+  var ivaPorcentaje=(chk&&chk.checked)?(+gVal('ep-iva-pct')||0):0;
+  if(!descripcion) return alert('La descripción no puede estar vacía');
+  if(valorBase<=0) return alert('El valor base debe ser mayor a cero');
+  p.descripcion=descripcion; p.valorBase=valorBase; p.ivaPorcentaje=ivaPorcentaje;
+  p.valorTotal=Math.round(valorBase*(1+ivaPorcentaje/100));
+  save('productos');
+  var ov=document.getElementById('edit-producto-overlay'); if(ov)ov.remove();
+  renderProductosPanel();
+}
+
+// ── Proveedores ──────────────────────────────────────────────────────────────
+function renderProveedoresPanel(){
+  var wrap=document.getElementById('alm-proveedores-body');
+  if(!wrap) return;
+  var comprasPorProv={};
+  DB.entradas.forEach(function(e){
+    comprasPorProv[e.proveedorId]=(comprasPorProv[e.proveedorId]||0)+(e.cantidad*(e.costoCompra||0));
+  });
+  var rows=DB.proveedores.slice().reverse().map(function(pr){
+    return '<tr><td>#'+pr.id+'</td><td>'+esc(pr.nombre)+'</td><td>'+esc(pr.contacto||'—')+'</td>'
+      +'<td>'+esc(pr.telefono||'—')+'</td><td>'+esc(pr.direccion||'—')+'</td>'
+      +'<td style="font-weight:700">'+fmt(comprasPorProv[pr.id]||0)+'</td>'
+      +'<td style="white-space:nowrap">'
+      +'<button class="btn btn-secondary btn-sm" onclick="editarProveedor('+pr.id+')">Editar</button> '
+      +'<button class="btn btn-sm" style="background:#C0392B;color:#fff" onclick="eliminarProveedor('+pr.id+')">Eliminar</button>'
+      +'</td></tr>';
+  }).join('');
+
+  wrap.innerHTML=
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff)">'
+    +'<div style="font-size:15px;font-weight:800">Proveedores</div>'
+    +'<div style="font-size:11.5px;color:var(--muted)">Catálogo de proveedores del almacén</div>'
+    +'</div>'
+    +'<div style="padding:20px 24px">'
+    +'<div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Registrar Proveedor</span></div>'
+    +'<div class="card-body"><div class="grid3">'
+    +'<div class="field col-span2"><label>Nombre *</label><input id="prov-nombre" type="text" placeholder="Ej: Distribuidora ABC S.A.S" style="width:100%"/></div>'
+    +'<div class="field"><label>Contacto</label><input id="prov-contacto" type="text" placeholder="Nombre de contacto" style="width:100%"/></div>'
+    +'<div class="field"><label>Teléfono</label><input id="prov-telefono" type="text" style="width:100%"/></div>'
+    +'<div class="field col-span2"><label>Dirección</label><input id="prov-direccion" type="text" style="width:100%"/></div>'
+    +'</div>'
+    +'<button class="btn btn-primary" onclick="saveProveedor()" style="margin-top:8px">+ Registrar Proveedor</button>'
+    +'</div></div>'
+    +(rows
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>ID</th><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Dirección</th><th>Total Comprado</th><th>Acciones</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Aún no hay proveedores registrados.</div>')
+    +'</div>';
+}
+function saveProveedor(){
+  var nombre=gVal('prov-nombre').trim();
+  var contacto=gVal('prov-contacto').trim();
+  var telefono=gVal('prov-telefono').trim();
+  var direccion=gVal('prov-direccion').trim();
+  if(!nombre) return alert('Ingresa el nombre del proveedor');
+  DB.proveedores.push(Object.assign({id:DB.nextIds.proveedor,nombre:nombre,contacto:contacto,
+    telefono:telefono,direccion:direccion},auditInfo('registro de proveedor')));
+  DB.nextIds.proveedor++;
+  save('proveedores'); save('nextIds');
+  renderProveedoresPanel();
+}
+function eliminarProveedor(id){
+  var pr=DB.proveedores.find(function(x){return x.id===id;}); if(!pr)return;
+  var tieneEntradas=DB.entradas.some(function(e){return e.proveedorId===id;});
+  if(tieneEntradas){
+    alert('No se puede eliminar: este proveedor ya tiene entradas registradas.');
+    return;
+  }
+  askAdmin('Eliminar proveedor "'+pr.nombre+'"','',function(){
+    DB.proveedores=DB.proveedores.filter(function(x){return x.id!==id;});
+    save('proveedores'); renderProveedoresPanel();
+  });
+}
+function editarProveedor(id){
+  var pr=DB.proveedores.find(function(x){return x.id===id;}); if(!pr)return;
+  var overlay=document.createElement('div');
+  overlay.id='edit-proveedor-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:#0006;z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML=
+    '<div style="background:#fff;border-radius:16px;padding:28px 28px 22px;max-width:480px;width:100%;box-shadow:0 8px 40px #0003">'
+    +'<div style="font-size:16px;font-weight:800;margin-bottom:16px">Editar Proveedor</div>'
+    +'<div class="field" style="margin-bottom:12px"><label>Nombre</label><input id="epr-nombre" type="text" value="'+esc(pr.nombre)+'" style="width:100%"/></div>'
+    +'<div class="field" style="margin-bottom:12px"><label>Contacto</label><input id="epr-contacto" type="text" value="'+esc(pr.contacto||'')+'" style="width:100%"/></div>'
+    +'<div class="field" style="margin-bottom:12px"><label>Teléfono</label><input id="epr-telefono" type="text" value="'+esc(pr.telefono||'')+'" style="width:100%"/></div>'
+    +'<div class="field" style="margin-bottom:18px"><label>Dirección</label><input id="epr-direccion" type="text" value="'+esc(pr.direccion||'')+'" style="width:100%"/></div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end">'
+    +'<button class="btn btn-secondary" onclick="document.getElementById(\'edit-proveedor-overlay\').remove()">Cancelar</button>'
+    +'<button class="btn btn-primary" onclick="guardarEdicionProveedor('+id+')">Guardar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+}
+function guardarEdicionProveedor(id){
+  var pr=DB.proveedores.find(function(x){return x.id===id;}); if(!pr)return;
+  var nombre=gVal('epr-nombre').trim();
+  if(!nombre) return alert('El nombre no puede estar vacío');
+  pr.nombre=nombre; pr.contacto=gVal('epr-contacto').trim();
+  pr.telefono=gVal('epr-telefono').trim(); pr.direccion=gVal('epr-direccion').trim();
+  save('proveedores');
+  var ov=document.getElementById('edit-proveedor-overlay'); if(ov)ov.remove();
+  renderProveedoresPanel();
+}
+
+// ── Inventario ───────────────────────────────────────────────────────────────
+function renderInventarioPanel(){
+  var wrap=document.getElementById('alm-inventario-body');
+  if(!wrap) return;
+  var inv=calcInventario();
+  var rows=DB.productos.map(function(p){
+    var m=inv[p.id]; var stock=m?m.stock:0;
+    return '<tr><td>#'+p.id+'</td><td>'+esc(p.descripcion)+'</td><td>'+(m?m.entradas:0)+'</td><td>'+(m?m.ventas:0)+'</td>'
+      +'<td style="font-weight:800;color:'+(stock<=0?'#C0392B':'#1A7A4A')+'">'+stock+' und.</td>'
+      +'<td>'+fmt(p.valorTotal)+'</td>'
+      +'<td style="font-weight:700">'+fmt(stock*p.valorTotal)+'</td></tr>';
+  }).join('');
+
+  wrap.innerHTML=
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff)">'
+    +'<div style="font-size:15px;font-weight:800">Inventario Actual</div>'
+    +'<div style="font-size:11.5px;color:var(--muted)">Existencias calculadas automáticamente a partir de entradas y ventas</div>'
+    +'</div>'
+    +'<div style="padding:20px 24px">'
+    +(rows
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>ID</th><th>Producto</th><th>Entradas</th><th>Ventas</th><th>Stock</th><th>Valor Unit.</th><th>Valor en Stock</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">No hay productos registrados aún. Ve a "Insumos y Equipos" para crear el primero.</div>')
+    +'</div>';
+}
+
+// ── Entradas ─────────────────────────────────────────────────────────────────
+function renderEntradasPanel(){
+  var wrap=document.getElementById('alm-entradas-body');
+  if(!wrap) return;
+  var h=hoy();
+  var optsProd=DB.productos.map(function(p){return '<option value="'+p.id+'" data-precio="'+p.valorTotal+'">#'+p.id+' — '+esc(p.descripcion)+'</option>';}).join('');
+  var optsProv=DB.proveedores.map(function(pr){return '<option value="'+pr.id+'">#'+pr.id+' — '+esc(pr.nombre)+'</option>';}).join('');
+  var rows=DB.entradas.slice().reverse().map(function(e){
+    var p=DB.productos.find(function(x){return x.id===e.productoId;});
+    var pr=DB.proveedores.find(function(x){return x.id===e.proveedorId;});
+    var costoCompra=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+    return '<tr><td>'+fmtDate(e.fecha)+'</td><td>'+(p?esc(p.descripcion):'—')+'</td><td>'+esc(pr?pr.nombre:'—')+'</td>'
+      +'<td>'+e.cantidad+' und.</td>'
+      +'<td>'+(costoCompra?fmt(costoCompra):'—')+'</td>'
+      +'<td>'+(e.costoVenta?fmt(e.costoVenta):'—')+'</td>'
+      +'<td>'+esc(e.observacion||'—')+'</td>'
+      +'<td style="white-space:nowrap">'
+      +'<button class="btn btn-secondary btn-sm" onclick="editarEntrada('+e.id+')">Editar</button> '
+      +'<button class="btn btn-secondary btn-sm" onclick="exportarEntradaPDF('+e.id+')">PDF</button> '
+      +'<button class="btn btn-sm" style="background:#C0392B;color:#fff" onclick="eliminarEntrada('+e.id+')">Eliminar</button>'
+      +'</td></tr>';
+  }).join('');
+
+  wrap.innerHTML=
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff)">'
+    +'<div style="font-size:15px;font-weight:800">Entradas de Almacén</div>'
+    +'<div style="font-size:11.5px;color:var(--muted)">Registra el ingreso de mercancía al inventario</div>'
+    +'</div>'
+    +'<div style="padding:20px 24px">'
+    +(DB.productos.length
+      ?'<div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Registrar Entrada</span></div>'
+        +'<div class="card-body"><div class="grid3">'
+        +'<div class="field"><label>Producto *</label><select id="ent-prod" onchange="onEntCostoChange()" style="width:100%"><option value="">Seleccione un insumo</option>'+optsProd+'</select></div>'
+        +'<div class="field"><label>Proveedor</label><select id="ent-prov" style="width:100%"><option value="">— Sin proveedor —</option>'+optsProv+'</select></div>'
+        +'<div class="field"><label>Cantidad *</label><input id="ent-cant" type="number" min="1" style="width:100%"/></div>'
+        +'<div class="field"><label>Costo de Compra (unitario) *</label><input id="ent-costo" type="number" min="0" oninput="onEntCostoChange()" style="width:100%"/></div>'
+        +'<div class="field"><label>% Utilidad Deseada</label><input id="ent-margen" type="number" step="0.1" value="30" oninput="onEntCostoChange()" style="width:100%"/></div>'
+        +'<div class="field"><label>Costo de Venta (unitario)</label><input id="ent-costoventa" type="number" min="0" style="width:100%;font-weight:800;background:var(--bg)"/></div>'
+        +'<div class="field"><label>Fecha</label><input id="ent-fecha" type="date" value="'+h+'" style="width:100%"/></div>'
+        +'<div class="field col-span2"><label>Observación</label><input id="ent-obs" type="text" style="width:100%"/></div>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--muted);margin-top:2px">El costo de venta se sugiere automáticamente (costo de compra + % utilidad), pero puedes editarlo libremente para aproximarlo.</div>'
+        +'<button class="btn btn-primary" onclick="saveEntrada()" style="margin-top:8px">+ Registrar Entrada</button></div></div>'
+      :'<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;margin-bottom:20px">Primero registra un insumo en "Insumos y Equipos".</div>')
+    +(rows
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>Fecha</th><th>Producto</th><th>Proveedor</th><th>Cantidad</th><th>Costo Compra</th><th>Costo Venta</th><th>Observación</th><th>Acciones</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Aún no hay entradas registradas.</div>')
+    +'</div>';
+}
+function onEntCostoChange(){
+  var costo=+gVal('ent-costo')||0;
+  var margen=+gVal('ent-margen')||0;
+  document.getElementById('ent-costoventa').value=Math.round(costo*(1+margen/100));
+}
+function saveEntrada(){
+  var productoId=+gVal('ent-prod');
+  var proveedorId=+gVal('ent-prov')||null;
+  var cantidad=+gVal('ent-cant')||0;
+  var costoCompra=+gVal('ent-costo')||0;
+  var margenPorcentaje=+gVal('ent-margen')||0;
+  var costoVenta=+gVal('ent-costoventa')||0;
+  var fecha=gVal('ent-fecha')||hoy();
+  var observacion=gVal('ent-obs').trim();
+  if(!productoId) return alert('Selecciona un insumo');
+  if(cantidad<=0) return alert('La cantidad debe ser mayor a cero');
+  if(costoCompra<=0) return alert('El costo de compra debe ser mayor a cero');
+  DB.entradas.push(Object.assign({id:DB.nextIds.entrada,productoId:productoId,proveedorId:proveedorId,
+    cantidad:cantidad,costoCompra:costoCompra,margenPorcentaje:margenPorcentaje,costoVenta:costoVenta,
+    fecha:fecha,observacion:observacion},auditInfo('entrada de almacén')));
+  DB.nextIds.entrada++;
+  save('entradas'); save('nextIds');
+  renderEntradasPanel();
+}
+function eliminarEntrada(id){
+  var e=DB.entradas.find(function(x){return x.id===id;}); if(!e)return;
+  var p=DB.productos.find(function(x){return x.id===e.productoId;});
+  askAdmin('Eliminar entrada',(p?p.descripcion:'')+' · '+e.cantidad+' und. · '+fmtDate(e.fecha),function(){
+    DB.entradas=DB.entradas.filter(function(x){return x.id!==id;});
+    save('entradas'); renderEntradasPanel();
+  });
+}
+function editarEntrada(id){
+  var e=DB.entradas.find(function(x){return x.id===id;}); if(!e)return;
+  var optsProd=DB.productos.map(function(p){return '<option value="'+p.id+'"'+(p.id===e.productoId?' selected':'')+'>#'+p.id+' — '+esc(p.descripcion)+'</option>';}).join('');
+  var optsProv=DB.proveedores.map(function(pr){return '<option value="'+pr.id+'"'+(pr.id===e.proveedorId?' selected':'')+'>#'+pr.id+' — '+esc(pr.nombre)+'</option>';}).join('');
+  var costoCompra=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+  var overlay=document.createElement('div');
+  overlay.id='edit-entrada-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:#0006;z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  overlay.innerHTML=
+    '<div style="background:#fff;border-radius:16px;padding:28px;max-width:560px;width:100%;box-shadow:0 8px 40px #0003">'
+    +'<div style="font-size:16px;font-weight:800;margin-bottom:16px">Editar Entrada</div>'
+    +'<div class="grid3">'
+    +'<div class="field col-span2"><label>Producto</label><select id="ee-prod" style="width:100%">'+optsProd+'</select></div>'
+    +'<div class="field"><label>Proveedor</label><select id="ee-prov" style="width:100%"><option value="">— Sin proveedor —</option>'+optsProv+'</select></div>'
+    +'<div class="field"><label>Cantidad</label><input id="ee-cant" type="number" min="1" value="'+e.cantidad+'" style="width:100%"/></div>'
+    +'<div class="field"><label>Costo de Compra</label><input id="ee-costo" type="number" min="0" value="'+costoCompra+'" oninput="onEeCostoChange()" style="width:100%"/></div>'
+    +'<div class="field"><label>% Utilidad</label><input id="ee-margen" type="number" step="0.1" value="'+(e.margenPorcentaje||0)+'" oninput="onEeCostoChange()" style="width:100%"/></div>'
+    +'<div class="field"><label>Costo de Venta</label><input id="ee-costoventa" type="number" min="0" value="'+(e.costoVenta||0)+'" style="width:100%;font-weight:800"/></div>'
+    +'<div class="field"><label>Fecha</label><input id="ee-fecha" type="date" value="'+e.fecha+'" style="width:100%"/></div>'
+    +'<div class="field col-span2"><label>Observación</label><input id="ee-obs" type="text" value="'+esc(e.observacion||'')+'" style="width:100%"/></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">'
+    +'<button class="btn btn-secondary" onclick="document.getElementById(\'edit-entrada-overlay\').remove()">Cancelar</button>'
+    +'<button class="btn btn-primary" onclick="guardarEdicionEntrada('+id+')">Guardar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',function(ev){if(ev.target===overlay)overlay.remove();});
+}
+function onEeCostoChange(){
+  var costo=+gVal('ee-costo')||0;
+  var margen=+gVal('ee-margen')||0;
+  document.getElementById('ee-costoventa').value=Math.round(costo*(1+margen/100));
+}
+function guardarEdicionEntrada(id){
+  var e=DB.entradas.find(function(x){return x.id===id;}); if(!e)return;
+  var cantidad=+gVal('ee-cant')||0;
+  var costoCompra=+gVal('ee-costo')||0;
+  if(cantidad<=0) return alert('La cantidad debe ser mayor a cero');
+  if(costoCompra<=0) return alert('El costo de compra debe ser mayor a cero');
+  e.productoId=+gVal('ee-prod');
+  e.proveedorId=+gVal('ee-prov')||null;
+  e.cantidad=cantidad;
+  e.costoCompra=costoCompra;
+  e.margenPorcentaje=+gVal('ee-margen')||0;
+  e.costoVenta=+gVal('ee-costoventa')||0;
+  e.fecha=gVal('ee-fecha')||e.fecha;
+  e.observacion=gVal('ee-obs').trim();
+  delete e.costoUnitario;
+  save('entradas');
+  var ov=document.getElementById('edit-entrada-overlay'); if(ov)ov.remove();
+  renderEntradasPanel();
+}
+function exportarEntradaPDF(id){
+  var e=DB.entradas.find(function(x){return x.id===id;}); if(!e)return;
+  var p=DB.productos.find(function(x){return x.id===e.productoId;})||{};
+  var pr=DB.proveedores.find(function(x){return x.id===e.proveedorId;});
+  var costoCompra=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=doc.internal.pageSize.getWidth();
+  pdfWatermark(doc);
+  pdfHeader(doc,'Comprobante de Entrada de Almacén — N° '+docNum(e.id));
+
+  var y=32;
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(15,32,68);
+  doc.text('ENTRADA DE ALMACÉN', 14, y); y+=5;
+  doc.setFillColor(201,168,76); doc.rect(14,y,W-28,0.6,'F'); y+=9;
+
+  var campos=[
+    ['Producto:', p.descripcion||'—'],
+    ['Proveedor:', pr?pr.nombre:'—'],
+    ['Cantidad:', e.cantidad+' unidades'],
+    ['Fecha:', fmtDate(e.fecha)],
+    ['Costo de compra (unitario):', fmt(costoCompra)],
+    ['Costo total de compra:', fmt(costoCompra*e.cantidad)],
+    ['Costo de venta sugerido (unitario):', fmt(e.costoVenta||0)],
+    ['Observación:', e.observacion||'—']
+  ];
+  doc.setFontSize(10);
+  campos.forEach(function(par){
+    doc.setFont('helvetica','bold'); doc.setTextColor(80,90,110);
+    doc.text(par[0], 17, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(20,30,50);
+    doc.text(String(par[1]), 90, y);
+    y+=8;
+  });
+
+  var nombreArchivo='entrada-'+docNum(e.id)+'-'+((p.descripcion||'insumo').replace(/\s+/g,'-'))+'.pdf';
+  savePDF(doc,'entrada',nombreArchivo);
+}
+
+// ── Ventas (salida de almacén) ────────────────────────────────────────────────
+function costoCompraPromedio(productoId){
+  var ents=DB.entradas.filter(function(e){return e.productoId===productoId;});
+  if(!ents.length) return 0;
+  var cantTotal=0, costoTotal=0;
+  ents.forEach(function(e){
+    var cc=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+    cantTotal+=e.cantidad; costoTotal+=e.cantidad*cc;
+  });
+  return cantTotal>0?costoTotal/cantTotal:0;
+}
+function costoVentaSugerido(productoId){
+  var ents=DB.entradas.filter(function(e){return e.productoId===productoId&&e.costoVenta;});
+  if(ents.length) return ents[ents.length-1].costoVenta;
+  var p=DB.productos.find(function(x){return x.id===productoId;});
+  return p?p.valorTotal:0;
+}
+function renderVentasPanel(){
+  var wrap=document.getElementById('alm-ventas-body');
+  if(!wrap) return;
+  var h=hoy();
+  var inv=calcInventario();
+  var optsProd=DB.productos.map(function(p){
+    var stock=inv[p.id]?inv[p.id].stock:0;
+    var sugerido=costoVentaSugerido(p.id);
+    return '<option value="'+p.id+'" data-precio="'+sugerido+'" data-stock="'+stock+'">#'+p.id+' — '+esc(p.descripcion)+' (Stock: '+stock+')</option>';
+  }).join('');
+  var optsCli=DB.clientes.map(function(c){return '<option value="'+c.id+'">'+esc(c.nombre)+' — '+esc(c.cedula)+'</option>';}).join('');
+
+  var rows=DB.ventas.slice().reverse().map(function(v){
+    var p=DB.productos.find(function(x){return x.id===v.productoId;});
+    var cli=DB.clientes.find(function(x){return x.id===v.clienteId;});
+    var tipoBadge=v.tipoPago==='credito'?badge('Crédito #'+v.creditoId,'mora'):badge('Contado','green');
+    return '<tr><td>'+fmtDate(v.fecha)+'</td><td>'+(p?esc(p.descripcion):'—')+'</td><td>'+esc(cli?cli.nombre:'—')+'</td>'
+      +'<td>'+v.cantidad+' und.</td><td style="font-weight:700">'+fmt(v.valorTotalVenta)+'</td>'
+      +'<td style="font-weight:700;color:'+((v.utilidad||0)>=0?'#1A7A4A':'#C0392B')+'">'+fmt(v.utilidad||0)+'</td>'
+      +'<td>'+tipoBadge+'</td>'
+      +'<td><button class="btn btn-sm" style="background:#C0392B;color:#fff" onclick="eliminarVenta('+v.id+')">Eliminar</button></td></tr>';
+  }).join('');
+  var totalVentas=DB.ventas.reduce(function(a,v){return a+v.valorTotalVenta;},0);
+
+  wrap.innerHTML=
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">'
+    +'<div><div style="font-size:15px;font-weight:800">Ventas (Salida de Almacén)</div><div style="font-size:11.5px;color:var(--muted)">Registra la venta de un insumo o equipo</div></div>'
+    +'<span class="badge" style="background:#EDF7F0;color:#1A7A4A;border:1px solid #1A7A4A;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">Total vendido: '+fmt(totalVentas)+'</span>'
+    +'</div>'
+    +'<div style="padding:20px 24px">'
+    +((DB.productos.length&&DB.clientes.length)
+      ?'<div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Registrar Venta</span></div>'
+        +'<div class="card-body">'
+        +'<div class="grid3">'
+        +'<div class="field"><label>Producto *</label><select id="vta-prod" onchange="onVentaProdChange()" style="width:100%"><option value="">Seleccione insumo</option>'+optsProd+'</select></div>'
+        +'<div class="field"><label>Cliente *</label><select id="vta-cliente" style="width:100%"><option value="">Seleccione cliente</option>'+optsCli+'</select></div>'
+        +'<div class="field"><label>Fecha</label><input id="vta-fecha" type="date" value="'+h+'" style="width:100%"/></div>'
+        +'<div class="field"><label>Cantidad *</label><input id="vta-cant" type="number" min="1" value="1" oninput="onVentaCantPrecioChange()" style="width:100%"/></div>'
+        +'<div class="field"><label>Valor Unitario de Venta *</label><input id="vta-precio" type="number" min="0" oninput="onVentaCantPrecioChange()" style="width:100%"/></div>'
+        +'<div class="field"><label>Valor Total</label><input id="vta-total" type="text" readonly value="'+fmt(0)+'" style="width:100%;font-weight:800;background:var(--bg)"/></div>'
+        +'</div>'
+        +'<div id="vta-stock-warn" style="display:none;margin-top:8px;font-size:11.5px;color:#C0392B;font-weight:600"></div>'
+        +'<div id="vta-utilidad-info" style="display:none;margin-top:8px;font-size:11.5px;color:var(--muted)"></div>'
+
+        +'<div style="margin-top:16px;padding:14px 16px;background:var(--bg);border-radius:11px;border:1.5px solid var(--border)">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Forma de Pago</div>'
+        +'<div style="display:flex;gap:20px;margin-bottom:4px">'
+        +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vta-tipo" value="contado" checked onchange="onVentaTipoChange()" style="width:auto"/> Contado</label>'
+        +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="vta-tipo" value="credito" onchange="onVentaTipoChange()" style="width:auto"/> Crédito</label>'
+        +'</div>'
+
+        +'<div id="vta-credito-fields" style="display:none;margin-top:14px">'
+        +'<div class="grid3">'
+        +'<div class="field"><label>Tasa de Interés Mensual (%)</label>'
+          +'<input id="vta-tasa" type="number" step="0.01" min="0" placeholder="Ej: 5" oninput="onVtaTasaChange()" style="width:100%"/></div>'
+        +'<div class="field"><label>Número de Cuotas *</label>'
+          +'<input id="vta-cuotas" type="number" min="1" placeholder="Ej: 12" oninput="onVtaCuotasChange()" style="width:100%"/></div>'
+        +'<div class="field"><label>Periodicidad</label>'
+          +'<select id="vta-periodo" style="width:100%"><option value="mensual">Mensual</option><option value="quincenal">Quincenal</option><option value="semanal">Semanal</option></select></div>'
+        +'<div class="field"><label>Tasa de Mora Diaria (%)</label>'
+          +'<input id="vta-mora" type="number" step="0.001" value="0.1" style="width:100%"/></div>'
+        +'</div>'
+
+        +'<div style="margin-top:14px;padding:12px 16px;background:#fff;border-radius:11px;border:1.5px solid var(--border)">'
+        +'<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">'
+        +'<div style="min-width:200px;max-width:260px">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">'
+        +'Valor de Cuota <span style="text-transform:none;font-weight:600;color:var(--text);opacity:.7">(capital + interés)</span>'
+        +'<span style="font-size:9px;font-weight:400;color:var(--mora);display:block;text-transform:none;letter-spacing:0;margin-top:1px">Editable: al cambiar recalcula la tasa</span>'
+        +'</div>'
+        +'<input id="vta-cuota-val" type="number" min="0" step="1" '
+        +'style="font-size:15px;font-weight:800;color:var(--text);border:1.5px solid var(--mora);border-radius:8px;padding:7px 11px;width:100%;background:#fff" '
+        +'oninput="onVtaCuotaChange()" placeholder="Se calcula automáticamente"/>'
+        +'</div>'
+        +'<div id="vta-preview-items" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end"></div>'
+        +'</div>'
+        +'<div id="vta-tasa-recalc" style="margin-top:6px;font-size:11px;color:var(--mora);font-weight:600;display:none">'
+        +'<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13,2 4,14 11,14 10,22 20,9 13,9"/></svg></i> Tasa recalculada desde cuota personalizada'
+        +'</div>'
+        +'</div>'
+
+        +'<div style="font-size:11px;color:var(--muted);margin-top:10px"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.5"/><path d="M20 12a8 8 0 0 1-14.5 4.5"/><polyline points="17,3 18.5,7.5 14,7.5"/><polyline points="7,21 5.5,16.5 10,16.5"/></svg></i> Se creará automáticamente un nuevo crédito en el módulo de Créditos, asociado al cliente seleccionado.</div>'
+        +'</div>'
+        +'</div>'
+
+        +'<button class="btn btn-primary" onclick="registrarVenta()" style="margin-top:16px;width:100%">+ Registrar Venta</button>'
+        +'</div></div>'
+      :'<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;margin-bottom:20px">'
+        +(!DB.productos.length?'Primero registra un insumo en "Insumos y Equipos". ':'')
+        +(!DB.clientes.length?'Primero registra un cliente en el módulo de Clientes.':'')
+        +'</div>')
+    +(rows
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>Fecha</th><th>Producto</th><th>Cliente</th><th>Cantidad</th><th>Valor Total</th><th>Utilidad</th><th>Tipo</th><th>Acciones</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Aún no hay ventas registradas.</div>')
+    +'</div>';
+}
+function onVentaProdChange(){
+  var sel=document.getElementById('vta-prod');
+  var opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value)return;
+  document.getElementById('vta-precio').value=+opt.dataset.precio||0;
+  onVentaCantPrecioChange();
+}
+function onVentaCantPrecioChange(){
+  var cant=+gVal('vta-cant')||0;
+  var precio=+gVal('vta-precio')||0;
+  var total=Math.round(cant*precio);
+  document.getElementById('vta-total').value=fmt(total);
+
+  var sel=document.getElementById('vta-prod');
+  var opt=sel.options[sel.selectedIndex];
+  var warn=document.getElementById('vta-stock-warn');
+  var utilInfo=document.getElementById('vta-utilidad-info');
+  if(opt&&opt.value){
+    var stock=+opt.dataset.stock||0;
+    if(cant>stock){
+      warn.style.display='block';
+      warn.textContent='Atención: la cantidad ('+cant+') supera el stock disponible ('+stock+' und.)';
+    }else{
+      warn.style.display='none';
+    }
+    var costoProm=costoCompraPromedio(+opt.value);
+    var utilidad=Math.round((precio-costoProm)*cant);
+    if(costoProm>0){
+      utilInfo.style.display='block';
+      utilInfo.innerHTML='Costo de compra promedio: '+fmt(costoProm)+' c/u &nbsp;·&nbsp; Utilidad estimada de esta venta: <strong style="color:'+(utilidad>=0?'#1A7A4A':'#C0392B')+'">'+fmt(utilidad)+'</strong>';
+    }else{
+      utilInfo.style.display='none';
+    }
+  }
+  // Si está en modo crédito, refrescar cuota/tasa con el nuevo monto
+  var tipoRadio=document.querySelector('input[name="vta-tipo"]:checked');
+  if(tipoRadio&&tipoRadio.value==='credito') onVtaCuotasChange();
+}
+function onVentaTipoChange(){
+  var tipo=document.querySelector('input[name="vta-tipo"]:checked').value;
+  document.getElementById('vta-credito-fields').style.display=tipo==='credito'?'block':'none';
+}
+
+// ── Crédito interactivo dentro de Ventas (mismo motor que "Generar Nuevo Crédito") ──
+function actualizarPreviewVenta(cuota,tasa,nc){
+  var items=document.getElementById('vta-preview-items');
+  if(!items)return;
+  if(!cuota||!tasa||!nc){items.innerHTML='';return;}
+  var monto=_vtaMonto();
+  var totalPagar=cuota*nc;
+  var totalInt=totalPagar-monto;
+  var r=tasa/100;
+  var intPrimeraCuota=monto*r;
+  var capPrimeraCuota=cuota-intPrimeraCuota;
+  items.innerHTML=
+    miniKpi('Tasa mensual',tasa.toFixed(8).replace(/\.?0+$/,'')+'%','var(--mora)')+
+    miniKpi('Total a pagar',fmt(totalPagar),'var(--navy)')+
+    miniKpi('Total intereses',fmt(totalInt),'var(--err)')+
+    '<div style="width:1px;background:var(--border);align-self:stretch;margin:0 2px"></div>'+
+    '<div style="font-size:10px;color:var(--muted);line-height:1.7">'+
+      '<div><span style="font-weight:700;color:var(--ok)">Capital 1ª cuota: </span>'+fmt(Math.round(capPrimeraCuota))+'</div>'+
+      '<div><span style="font-weight:700;color:var(--err)">Interés 1ª cuota: </span>'+fmt(Math.round(intPrimeraCuota))+'</div>'+
+    '</div>';
+}
+function _vtaMonto(){
+  var cant=+gVal('vta-cant')||0, precio=+gVal('vta-precio')||0;
+  return Math.round(cant*precio);
+}
+function onVtaTasaChange(){
+  var monto=_vtaMonto();
+  var tasa=+gVal('vta-tasa')||0;
+  var nc=+gVal('vta-cuotas')||0;
+  if(!monto||!tasa||!nc){actualizarPreviewVenta(null,null,null);return;}
+  var r=tasa/100;
+  var cuota=(monto*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1);
+  var el=document.getElementById('vta-cuota-val');
+  if(el)el.value=Math.round(cuota);
+  var aviso=document.getElementById('vta-tasa-recalc'); if(aviso)aviso.style.display='none';
+  actualizarPreviewVenta(cuota,tasa,nc);
+}
+function onVtaCuotasChange(){
+  var tasa=+gVal('vta-tasa')||0;
+  var cuotaManual=+gVal('vta-cuota-val')||0;
+  if(tasa>0) onVtaTasaChange();
+  else if(cuotaManual>0) onVtaCuotaChange();
+  else actualizarPreviewVenta(null,null,null);
+}
+function onVtaCuotaChange(){
+  var monto=_vtaMonto();
+  var cuota=+gVal('vta-cuota-val')||0;
+  var nc=+gVal('vta-cuotas')||0;
+  var tasaAviso=document.getElementById('vta-tasa-recalc');
+  var items=document.getElementById('vta-preview-items');
+  if(!monto||!cuota||!nc){actualizarPreviewVenta(null,null,null);if(tasaAviso)tasaAviso.style.display='none';return;}
+  if(cuota<=monto/nc){
+    if(items)items.innerHTML='<span style="color:var(--err);font-size:12px"><i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> La cuota debe ser mayor a '+fmt(Math.ceil(monto/nc))+'</span>';
+    if(tasaAviso)tasaAviso.style.display='none';
+    return;
+  }
+  var tasa=calcTasaDesde(monto,cuota,nc);
+  if(tasa===null||tasa<0){
+    if(items)items.innerHTML='<span style="color:var(--err);font-size:12px">No se puede calcular tasa con estos valores</span>';
+    if(tasaAviso)tasaAviso.style.display='none';
+    return;
+  }
+  var tasaPct=Math.round(tasa*10000000000)/100000000;
+  var tasaEl=document.getElementById('vta-tasa');
+  if(tasaEl)tasaEl.value=tasaPct;
+  if(tasaAviso)tasaAviso.style.display='';
+  actualizarPreviewVenta(cuota,tasaPct,nc);
+}
+
+function registrarVenta(){
+  var productoId=+gVal('vta-prod');
+  var clienteId=+gVal('vta-cliente');
+  var cantidad=+gVal('vta-cant')||0;
+  var valorUnitario=+gVal('vta-precio')||0;
+  var fecha=gVal('vta-fecha')||hoy();
+  var tipoRadio=document.querySelector('input[name="vta-tipo"]:checked');
+  var tipoPago=tipoRadio?tipoRadio.value:'contado';
+
+  if(!productoId)return alert('Selecciona un insumo');
+  if(!clienteId)return alert('Selecciona un cliente');
+  if(cantidad<=0)return alert('La cantidad debe ser mayor a cero');
+  if(valorUnitario<=0)return alert('El valor unitario debe ser mayor a cero');
+
+  var p=DB.productos.find(function(x){return x.id===productoId;});
+  var inv=calcInventario()[productoId];
+  var stock=inv?inv.stock:0;
+  if(cantidad>stock){
+    if(!confirm('La cantidad ('+cantidad+') supera el stock disponible ('+stock+' und.). ¿Deseas continuar de todas formas?'))return;
+  }
+
+  var valorTotalVenta=Math.round(cantidad*valorUnitario);
+  var costoUnitarioCompra=costoCompraPromedio(productoId);
+  var utilidad=Math.round((valorUnitario-costoUnitarioCompra)*cantidad);
+  var creditoId=null;
+
+  if(tipoPago==='credito'){
+    var tasaMensual=+gVal('vta-tasa')||0;
+    var numeroCuotas=+gVal('vta-cuotas')||0;
+    var periodicidad=gVal('vta-periodo')||'mensual';
+    var tasaMoraDiaria=+gVal('vta-mora')||0.1;
+    var cuotaFija=+gVal('vta-cuota-val')||0;
+    if(numeroCuotas<1)return alert('El número de cuotas debe ser al menos 1');
+    if(!tasaMensual&&!cuotaFija)return alert('Ingresa la tasa de interés o el valor de la cuota');
+    if(!cuotaFija){
+      var r=tasaMensual/100, nc=numeroCuotas;
+      cuotaFija=Math.round(r===0?valorTotalVenta/nc:(valorTotalVenta*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1));
+    }
+
+    var nuevoCredito=Object.assign({
+      id:DB.nextIds.credito, clienteId:clienteId, monto:valorTotalVenta,
+      tasaMensual:tasaMensual, numeroCuotas:numeroCuotas, periodicidad:periodicidad,
+      fechaDesembolso:fecha, concepto:'Venta almacén: '+p.descripcion+' x'+cantidad,
+      estado:'activo', tasaMoraDiaria:Math.round((tasaMoraDiaria/100)*10000)/10000, cuotaFija:cuotaFija,
+      origenAlmacen:true, ventaId:DB.nextIds.venta
+    },auditInfo('crédito generado por venta de almacén'));
+    DB.creditos.push(nuevoCredito);
+    creditoId=nuevoCredito.id;
+    DB.nextIds.credito++;
+  }
+
+  DB.ventas.push(Object.assign({
+    id:DB.nextIds.venta, productoId:productoId, clienteId:clienteId, cantidad:cantidad,
+    valorUnitario:valorUnitario, valorTotalVenta:valorTotalVenta, costoUnitarioCompra:costoUnitarioCompra,
+    utilidad:utilidad, fecha:fecha, tipoPago:tipoPago, creditoId:creditoId
+  },auditInfo('venta de almacén')));
+  DB.nextIds.venta++;
+
+  save('ventas'); save('nextIds');
+  if(tipoPago==='credito') save('creditos');
+
+  var msg='<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Venta registrada'
+    +(creditoId?' — crédito #'+creditoId+' creado en Créditos':' — utilidad de '+fmt(utilidad)+' registrada en Caja')+'.';
+  mostrarModal(msg,'ok');
+  renderVentasPanel();
+}
+function eliminarVenta(id){
+  var v=DB.ventas.find(function(x){return x.id===id;}); if(!v)return;
+  var p=DB.productos.find(function(x){return x.id===v.productoId;});
+  var desc=(p?p.descripcion:'')+' · '+v.cantidad+' und. · '+fmt(v.valorTotalVenta);
+  var extra=v.creditoId?' Esto también eliminará el crédito #'+v.creditoId+' asociado y sus pagos.':'';
+  askAdmin('Eliminar venta',desc+extra,function(){
+    DB.ventas=DB.ventas.filter(function(x){return x.id!==id;});
+    if(v.creditoId){
+      DB.creditos=DB.creditos.filter(function(c){return c.id!==v.creditoId;});
+      DB.pagos=DB.pagos.filter(function(pg){return pg.creditoId!==v.creditoId;});
+      save('creditos'); save('pagos');
+    }
+    save('ventas');
+    renderVentasPanel();
+  });
+}
+
+// ── Balance Almacén ──────────────────────────────────────────────────────────
+function renderBalanceAlmacenPanel(){
+  var wrap=document.getElementById('alm-balance-body');
+  if(!wrap) return;
+  var totalCompras=DB.entradas.reduce(function(a,e){
+    var cc=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+    return a+e.cantidad*cc;
+  },0);
+  var totalVentas=DB.ventas.reduce(function(a,v){return a+v.valorTotalVenta;},0);
+  var utilidadTotal=DB.ventas.reduce(function(a,v){return a+(v.utilidad||0);},0);
+  var utilidadContado=DB.ventas.filter(function(v){return v.tipoPago==='contado';}).reduce(function(a,v){return a+(v.utilidad||0);},0);
+  var utilidadCredito=DB.ventas.filter(function(v){return v.tipoPago==='credito';}).reduce(function(a,v){return a+(v.utilidad||0);},0);
+
+  // Compras por proveedor
+  var porProv={};
+  DB.entradas.forEach(function(e){
+    var cc=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+    var key=e.proveedorId||'sin';
+    if(!porProv[key])porProv[key]={total:0,entradas:0};
+    porProv[key].total+=e.cantidad*cc;
+    porProv[key].entradas++;
+  });
+  var filasProv=Object.keys(porProv).map(function(key){
+    var pr=key!=='sin'?DB.proveedores.find(function(x){return x.id===+key;}):null;
+    return '<tr><td>'+(pr?esc(pr.nombre):'Sin proveedor')+'</td><td>'+porProv[key].entradas+'</td><td style="font-weight:700">'+fmt(porProv[key].total)+'</td></tr>';
+  }).join('');
+
+  // Resumen mensual
+  var porMes={};
+  DB.entradas.forEach(function(e){
+    var cc=e.costoCompra!=null?e.costoCompra:(e.costoUnitario||0);
+    var mes=(e.fecha||'').slice(0,7);
+    if(!porMes[mes])porMes[mes]={compras:0,ventas:0,utilidad:0};
+    porMes[mes].compras+=e.cantidad*cc;
+  });
+  DB.ventas.forEach(function(v){
+    var mes=(v.fecha||'').slice(0,7);
+    if(!porMes[mes])porMes[mes]={compras:0,ventas:0,utilidad:0};
+    porMes[mes].ventas+=v.valorTotalVenta;
+    porMes[mes].utilidad+=(v.utilidad||0);
+  });
+  var mesesOrdenados=Object.keys(porMes).sort().reverse();
+  var filasMes=mesesOrdenados.map(function(mes){
+    var m=porMes[mes];
+    return '<tr><td>'+mes+'</td><td>'+fmt(m.compras)+'</td><td>'+fmt(m.ventas)+'</td>'
+      +'<td style="font-weight:700;color:'+(m.utilidad>=0?'#1A7A4A':'#C0392B')+'">'+fmt(m.utilidad)+'</td></tr>';
+  }).join('');
+
+  wrap.innerHTML=
+    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#f7f9ff,#fff)">'
+    +'<div style="font-size:15px;font-weight:800">Balance Almacén</div>'
+    +'<div style="font-size:11.5px;color:var(--muted)">Compras, ventas y utilidad del negocio de almacén (independiente del negocio de créditos)</div>'
+    +'</div>'
+    +'<div style="padding:20px 24px">'
+    +'<div class="grid3" style="margin-bottom:20px">'
+    +statCard('<i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h6l1.5 3H20v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><line x1="4" y1="14.5" x2="9" y2="14.5"/><line x1="15" y1="14.5" x2="20" y2="14.5"/></svg></i>','Total Compras',fmt(totalCompras),'#C0392B')
+    +statCard('<i class="ico-i" style="color:#1A7A4A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h6l1.5 3H20v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><line x1="4" y1="14.5" x2="9" y2="14.5"/><line x1="15" y1="14.5" x2="20" y2="14.5"/><polyline points="9.5,7.5 12,5 14.5,7.5"/><line x1="12" y1="5" x2="12" y2="11.5"/></svg></i>','Total Ventas',fmt(totalVentas),'#1A7A4A')
+    +statCard('<i class="ico-i" style="color:#B9903A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,17 9,11 13,15 21,6"/><polyline points="14,6 21,6 21,13"/></svg></i>','Utilidad Total',fmt(utilidadTotal),utilidadTotal>=0?'#1A7A4A':'#C0392B')
+    +'</div>'
+    +'<div class="grid2" style="margin-bottom:24px">'
+    +statCard('<i class="ico-i" style="color:#1A7A4A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.3" y="6.5" width="19.4" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg></i>','Utilidad Contado (en Caja)',fmt(utilidadContado),'#1A7A4A','Ya reflejada en el saldo de Caja de la cartera')
+    +statCard('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 6.5h19.4a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2.3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M1.3 9.7h21.4"/></svg></i>','Utilidad a Crédito (por cobrar)',fmt(utilidadCredito),'#B07D12','Se realizará en Caja a medida que se cobren las cuotas')
+    +'</div>'
+    +'<div class="card" style="margin-bottom:20px"><div class="card-header"><span class="card-title">Compras por Proveedor</span></div>'
+    +'<div class="card-body" style="padding:0">'
+    +(filasProv
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>Proveedor</th><th>N° Entradas</th><th>Total Comprado</th></tr></thead><tbody>'+filasProv+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Sin compras registradas.</div>')
+    +'</div></div>'
+    +'<div class="card"><div class="card-header"><span class="card-title">Resumen Mensual</span></div>'
+    +'<div class="card-body" style="padding:0">'
+    +(filasMes
+      ?'<div style="overflow-x:auto"><table class="table"><thead><tr><th>Mes</th><th>Compras</th><th>Ventas</th><th>Utilidad</th></tr></thead><tbody>'+filasMes+'</tbody></table></div>'
+      :'<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Sin movimientos registrados.</div>')
+    +'</div></div>'
+    +'</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // DATOS
 // ══════════════════════════════════════════════════════════════════════════════
 const COLS={
@@ -6927,6 +7982,11 @@ const COLS={
   usuarios:['id','usuario','clave','rol'],
   gastos:  ['id','fecha','categoria','descripcion','monto'],
   aportes: ['id','fecha','descripcion','monto'],
+  castigos:['id','creditoId','fecha','capitalCastigado','motivo'],
+  productos:['id','descripcion','valorBase','ivaPorcentaje','valorTotal'],
+  entradas: ['id','productoId','cantidad','costoUnitario','fecha','observacion'],
+  ventas:   ['id','productoId','clienteId','cantidad','valorUnitario','valorTotalVenta','fecha','tipoPago','creditoId'],
+  proveedores:['id','nombre','contacto','telefono','direccion'],
 };
 function gdDiagUpdate(){
   var box=document.getElementById('gd-diag-box');
@@ -6941,14 +8001,14 @@ function gdDiagUpdate(){
   l.push('Origen actual: ' + window.location.origin);
   if(window._gdScriptError) l.push('Error de script: ' + window._gdScriptError);
   if(GD._diagnostico) l.push('\n' + GD._diagnostico);
-  box.textContent=l.join('\n');
+  box.innerHTML=l.join('\n');
 }
 setInterval(gdDiagUpdate, 1500);
 function renderDatos(){
   const h=hoy();
   const sesion=GLOBAL.sesion;
   const isAdmin=(sesion&&sesion.rol)==='admin';
-  const carteraBytes=['clientes','creditos','pagos','gastos','aportes','nextIds']
+  const carteraBytes=['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds']
     .reduce((a,k)=>a+(CARTERA_ID?localStorage.getItem(pfx(k))||'':'').length,0);
   const globalBytes=['cc_usuarios','cc_carteras','cc_carteras_usuarios']
     .reduce((a,k)=>a+(localStorage.getItem(k)||'').length,0);
@@ -7372,6 +8432,11 @@ function exportarExcel(){
   XLSX.utils.book_append_sheet(wb, mkSheet(DB.pagos,    COLS.pagos),    'PAGOS');
   XLSX.utils.book_append_sheet(wb, mkSheet(DB.gastos,   COLS.gastos),   'GASTOS');
   XLSX.utils.book_append_sheet(wb, mkSheet(DB.aportes,  COLS.aportes),  'APORTES');
+  XLSX.utils.book_append_sheet(wb, mkSheet(DB.castigos, COLS.castigos), 'CASTIGOS');
+  XLSX.utils.book_append_sheet(wb, mkSheet(DB.productos, COLS.productos), 'ALMACEN_PRODUCTOS');
+  XLSX.utils.book_append_sheet(wb, mkSheet(DB.entradas, COLS.entradas), 'ALMACEN_ENTRADAS');
+  XLSX.utils.book_append_sheet(wb, mkSheet(DB.ventas, COLS.ventas), 'ALMACEN_VENTAS');
+  XLSX.utils.book_append_sheet(wb, mkSheet(DB.proveedores, COLS.proveedores), 'ALMACEN_PROVEEDORES');
 
   // ── Datos globales del sistema ──────────────────────────────────────────
   // CARTERAS
@@ -7384,7 +8449,7 @@ function exportarExcel(){
     mkSheet(GLOBAL.usuarios, COLS.usuarios),
     'USUARIOS');
 
-  // ACCESOS cartera<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13,6 19,12 13,18"/></svg></i>usuarios (tabla plana)
+  // ACCESOS cartera <-> usuarios (tabla plana)
   const cu=GLOBAL.carterasUsuarios;
   const accesosFlat=[];
   Object.entries(cu).forEach(([cid,ulist])=>{
@@ -7404,6 +8469,7 @@ function exportarExcel(){
     nextIdPago:   DB.nextIds.pago,
     nextIdGasto:  DB.nextIds.gasto,
     nextIdAporte: DB.nextIds.aporte,
+    nextIdCastigo:DB.nextIds.castigo,
     nextIdCartera:GLOBAL.nextIdCartera,
     nextIdUsuario:GLOBAL.nextIdUsuario,
     exportadoEl:  h,
@@ -7621,13 +8687,23 @@ function exportarGlobal(){
     const pag=lsGet(`cc_${c.id}_pagos`,[]);
     const gas=lsGet(`cc_${c.id}_gastos`,[]);
     const apo=lsGet(`cc_${c.id}_aportes`,[]);
-    const nxt=lsGet(`cc_${c.id}_nextIds`,{cliente:1,credito:1,pago:1,gasto:1,aporte:1});
+    const cas=lsGet(`cc_${c.id}_castigos`,[]);
+    const prod=lsGet(`cc_${c.id}_productos`,[]);
+    const ent=lsGet(`cc_${c.id}_entradas`,[]);
+    const vta=lsGet(`cc_${c.id}_ventas`,[]);
+    const prov=lsGet(`cc_${c.id}_proveedores`,[]);
+    const nxt=lsGet(`cc_${c.id}_nextIds`,{cliente:1,credito:1,pago:1,gasto:1,aporte:1,castigo:1,producto:1,entrada:1,venta:1,proveedor:1});
     nextIdsPorCartera[c.id]=nxt;
     XLSX.utils.book_append_sheet(wb, mkSheet(cli,COLS.clientes), `${nm}_CLIENTES`.slice(0,31));
     XLSX.utils.book_append_sheet(wb, mkSheet(cre,COLS.creditos), `${nm}_CREDITOS`.slice(0,31));
     XLSX.utils.book_append_sheet(wb, mkSheet(pag,COLS.pagos),    `${nm}_PAGOS`.slice(0,31));
     XLSX.utils.book_append_sheet(wb, mkSheet(gas,COLS.gastos),   `${nm}_GASTOS`.slice(0,31));
     XLSX.utils.book_append_sheet(wb, mkSheet(apo,COLS.aportes),  `${nm}_APORTES`.slice(0,31));
+    XLSX.utils.book_append_sheet(wb, mkSheet(cas,COLS.castigos), `${nm}_CASTIGOS`.slice(0,31));
+    XLSX.utils.book_append_sheet(wb, mkSheet(prod,COLS.productos), `${nm}_ALM_PROD`.slice(0,31));
+    XLSX.utils.book_append_sheet(wb, mkSheet(ent,COLS.entradas), `${nm}_ALM_ENT`.slice(0,31));
+    XLSX.utils.book_append_sheet(wb, mkSheet(vta,COLS.ventas), `${nm}_ALM_VTA`.slice(0,31));
+    XLSX.utils.book_append_sheet(wb, mkSheet(prov,COLS.proveedores), `${nm}_ALM_PROV`.slice(0,31));
   });
   XLSX.utils.book_append_sheet(wb, mkSheet(carteras, ['id','nombre','descripcion','creadaEl']), 'CARTERAS');
   XLSX.utils.book_append_sheet(wb, mkSheet(GLOBAL.usuarios, COLS.usuarios), 'USUARIOS');
@@ -7815,7 +8891,7 @@ function confirmarImportGlobal(){
     btnTexto:  '<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Confirmar Importación Global',
     cb: ()=>{
       GLOBAL.carteras.forEach(c=>{
-        ['clientes','creditos','pagos','gastos','aportes','nextIds'].forEach(k=>{
+        ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds'].forEach(k=>{
           try{localStorage.removeItem(`cc_${c.id}_${k}`)}catch{}
         });
       });
@@ -8175,7 +9251,7 @@ function eliminarCartera(id){
   askAdmin(`Eliminar cartera "${c.nombre}"`,
     `<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Se eliminarán TODOS los datos de esta cartera (clientes, créditos, pagos, gastos). Esta acción NO se puede deshacer.`,()=>{
     // Remove all localStorage keys for this cartera
-    ['clientes','creditos','pagos','gastos','aportes','nextIds'].forEach(k=>{
+    ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','nextIds'].forEach(k=>{
       try{localStorage.removeItem(`cc_${id}_${k}`)}catch{}
     });
     GLOBAL.carteras=GLOBAL.carteras.filter(x=>x.id!==id);
