@@ -1265,17 +1265,18 @@ const SB = {
   //    Requiere: en Supabase > Authentication > Providers > Email,
   //    desactivar "Confirm email" (el correo sintético no recibe nada real). ──
   async ensureAuthSession(usuario, clave) {
-    if (!SB.client) return false;
+    if (!SB.client) return { ok: false, error: 'Supabase no configurado' };
     const email = SB.syntheticEmail(usuario);
     try {
       const { error } = await SB.client.auth.signInWithPassword({ email, password: clave });
-      if (!error) return true;
+      if (!error) return { ok: true };
       // Primera vez con Supabase: crear la cuenta de Auth con la misma clave local
       const { error: signUpErr } = await SB.client.auth.signUp({ email, password: clave });
-      if (signUpErr) { console.warn('SB signUp error', signUpErr.message); return false; }
+      if (signUpErr) { console.warn('SB signUp error', signUpErr.message); return { ok: false, error: signUpErr.message }; }
       const retry = await SB.client.auth.signInWithPassword({ email, password: clave });
-      return !retry.error;
-    } catch (e) { console.error('SB.ensureAuthSession exception', e); return false; }
+      if (retry.error) return { ok: false, error: retry.error.message };
+      return { ok: true };
+    } catch (e) { console.error('SB.ensureAuthSession exception', e); return { ok: false, error: String(e) }; }
   },
 
   async signOut() {
@@ -1951,9 +1952,15 @@ async function doLogin(){
     // Si Supabase está configurado, autenticar también contra Supabase Auth
     // (para que auth.uid() exista y las políticas RLS dejen pasar los datos).
     if(SB.isConnected()){
-      const ok=await SB.ensureAuthSession(user.usuario, p);
-      if(ok) await SB.syncMyCarteraAccess(user.usuario);
-      else console.warn('No se pudo autenticar contra Supabase; continuando con sesión local.');
+      const r=await SB.ensureAuthSession(user.usuario, p);
+      if(r.ok){
+        await SB.syncMyCarteraAccess(user.usuario);
+      } else {
+        console.warn('No se pudo autenticar contra Supabase:', r.error);
+        setTimeout(function(){
+          mostrarModal('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Supabase no autenticó este usuario: '+esc(r.error||'error desconocido')+'. La sesión local sigue funcionando normal.','err');
+        }, 600);
+      }
     }
     GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
     err.classList.add('hidden');
