@@ -1294,14 +1294,16 @@ const SB = {
         // Si es rate limit, activar cooldown de 10 min para no seguir gastando cupo
         if (/rate limit/i.test(signUpErr.message || '')) {
           localStorage.setItem(cooldownKey, String(Date.now() + 10 * 60 * 1000));
+          SB._lastAuthError = 'Límite de correos de Supabase alcanzado (email rate limit).';
           return { ok: false, error: 'Límite de correos de Supabase alcanzado (email rate limit). Ve a Authentication > Providers > Email y desactiva "Confirm email" para evitar este límite. Reintenta en ~10 min.' };
         }
+        SB._lastAuthError = signUpErr.message;
         return { ok: false, error: signUpErr.message };
       }
       const retry = await SB.client.auth.signInWithPassword({ email, password: clave });
-      if (retry.error) return { ok: false, error: retry.error.message };
+      if (retry.error) { SB._lastAuthError = retry.error.message; return { ok: false, error: retry.error.message }; }
       return { ok: true };
-    } catch (e) { console.error('SB.ensureAuthSession exception', e); return { ok: false, error: String(e) }; }
+    } catch (e) { console.error('SB.ensureAuthSession exception', e); SB._lastAuthError = String(e); return { ok: false, error: String(e) }; }
   },
 
   async signOut() {
@@ -1641,7 +1643,31 @@ function loadCarteraData(){
     });
   } else if(SB.isConnected()){
     // Load from Supabase first, then refresh UI
-    SB.loadCartera(CARTERA_ID).then(()=>{
+    SB.loadCartera(CARTERA_ID).then((loaded)=>{
+      if(!loaded){
+        // Puede ser que syncMyCarteraAccess no haya alcanzado a registrar el
+        // acceso a tiempo (ej. sesión de Supabase Auth recién creada). Un
+        // reintento rápido resuelve la mayoría de estos casos sin que el
+        // usuario tenga que salir y volver a entrar.
+        const sesion=GLOBAL.sesion;
+        Promise.resolve(sesion?SB.syncMyCarteraAccess(sesion.usuario):null).then(()=>{
+          SB.loadCartera(CARTERA_ID).then((loaded2)=>{
+            _loadCarteraFromLS();
+            const activeBtn=document.querySelector('.nav-btn.active[data-tab]');
+            if(activeBtn){const tid=activeBtn.getAttribute('data-tab');if(RENDERS[tid])RENDERS[tid]();}else{renderDashboard();}
+            if(!loaded2){
+              const motivo = SB._authOk===false
+                ? ('Supabase no autenticó a este usuario ('+(SB._lastAuthError||'error desconocido')+').')
+                : 'Este usuario no tiene acceso registrado en Supabase para esta cartera todavía (puede tardar un momento en propagarse, o el admin necesita reasignar el acceso).';
+              console.warn('SB.loadCartera devolvió 0 filas para cartera', CARTERA_ID, '-', motivo);
+              setTimeout(function(){
+                mostrarModal('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> No se pudo traer la información de Supabase para esta cartera: '+esc(motivo)+' Mientras tanto se muestran los datos guardados localmente en este dispositivo (pueden estar vacíos si es la primera vez que entras aquí).','err');
+              }, 400);
+            }
+          });
+        });
+        return;
+      }
       _loadCarteraFromLS();
       const activeBtn=document.querySelector('.nav-btn.active[data-tab]');
       if(activeBtn){const tid=activeBtn.getAttribute('data-tab');if(RENDERS[tid])RENDERS[tid]();}else{renderDashboard();}
