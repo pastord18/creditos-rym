@@ -586,6 +586,12 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
           color:#A6831A;font-size:11.5px;font-weight:700;cursor:pointer">
           <i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.5"/><path d="M20 12a8 8 0 0 1-14.5 4.5"/><polyline points="17,3 18.5,7.5 14,7.5"/><polyline points="7,21 5.5,16.5 10,16.5"/></svg></i> Sincronizar todo a Drive
         </button>
+        <button id="cartera-sb-sync-btn" onclick="_sbSyncClick()"
+          style="margin-left:8px;padding:7px 14px;border-radius:20px;border:1.5px solid #3ECF8E;background:#F3FFFA;
+          color:#0E7A50;font-size:11.5px;font-weight:700;cursor:pointer">
+          <i class="ico-i" style="color:#0E7A50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.5"/><path d="M20 12a8 8 0 0 1-14.5 4.5"/><polyline points="17,3 18.5,7.5 14,7.5"/><polyline points="7,21 5.5,16.5 10,16.5"/></svg></i>
+          <span id="cartera-sb-sync-label">Sincronizar todo a Supabase</span>
+        </button>
       </div>
       <div style="margin-top:14px;padding-top:16px;border-top:1px solid #D0DAF0;display:flex;justify-content:space-between;align-items:center">
         <button class="btn btn-secondary" onclick="doLogout()" style="font-size:12px"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="20" y1="12" x2="5" y2="12"/><polyline points="11,6 5,12 11,18"/></svg></i> Cerrar sesión</button>
@@ -1266,13 +1272,32 @@ const SB = {
   //    desactivar "Confirm email" (el correo sintético no recibe nada real). ──
   async ensureAuthSession(usuario, clave) {
     if (!SB.client) return { ok: false, error: 'Supabase no configurado' };
+    // ── Cooldown anti-rate-limit: si hace poco intentamos signUp para este
+    //    usuario y Supabase respondió "rate limit", NO reintentamos signUp
+    //    de inmediato (cada intento fallido consume más cupo del mailer
+    //    nativo y empeora el bloqueo). Solo probamos signIn (no gasta cupo
+    //    de email) hasta que pase el cooldown. ──
     const email = SB.syntheticEmail(usuario);
+    const cooldownKey = 'sb_authcooldown_' + email;
+    const cooldownUntil = Number(localStorage.getItem(cooldownKey) || 0);
+    const enCooldown = Date.now() < cooldownUntil;
     try {
       const { error } = await SB.client.auth.signInWithPassword({ email, password: clave });
-      if (!error) return { ok: true };
+      if (!error) { localStorage.removeItem(cooldownKey); return { ok: true }; }
+      if (enCooldown) {
+        return { ok: false, error: 'Límite de correos de Supabase alcanzado recientemente. Reintenta en unos minutos (o desactiva "Confirm email" en Authentication > Providers > Email).' };
+      }
       // Primera vez con Supabase: crear la cuenta de Auth con la misma clave local
       const { error: signUpErr } = await SB.client.auth.signUp({ email, password: clave });
-      if (signUpErr) { console.warn('SB signUp error', signUpErr.message); return { ok: false, error: signUpErr.message }; }
+      if (signUpErr) {
+        console.warn('SB signUp error', signUpErr.message);
+        // Si es rate limit, activar cooldown de 10 min para no seguir gastando cupo
+        if (/rate limit/i.test(signUpErr.message || '')) {
+          localStorage.setItem(cooldownKey, String(Date.now() + 10 * 60 * 1000));
+          return { ok: false, error: 'Límite de correos de Supabase alcanzado (email rate limit). Ve a Authentication > Providers > Email y desactiva "Confirm email" para evitar este límite. Reintenta en ~10 min.' };
+        }
+        return { ok: false, error: signUpErr.message };
+      }
       const retry = await SB.client.auth.signInWithPassword({ email, password: clave });
       if (retry.error) return { ok: false, error: retry.error.message };
       return { ok: true };
@@ -1387,6 +1412,36 @@ const SB = {
   }
 };
 SB.init();
+
+// ── Botón manual de sincronización con Supabase (pantalla de carteras) ──
+function _sbSyncClick(){
+  if(!SB.isConnected()){
+    alert('Supabase no está configurado en este archivo (falta SUPABASE_URL / SUPABASE_ANON_KEY).');
+    return;
+  }
+  const label=document.getElementById('cartera-sb-sync-label');
+  if(label) label.textContent='Sincronizando...';
+  SB.fullSyncAll().then(()=>{
+    if(label) label.textContent='Sincronizado con Supabase';
+    setTimeout(()=>{ if(label) label.textContent='Sincronizar todo a Supabase'; }, 2500);
+  }).catch(()=>{
+    if(label) label.textContent='Error al sincronizar';
+    setTimeout(()=>{ if(label) label.textContent='Sincronizar todo a Supabase'; }, 2500);
+  });
+}
+// Refleja si hay sesión autenticada contra Supabase (no solo si el cliente existe)
+function _updateSBStatusUI(autenticado){
+  SB._authOk = autenticado;
+  const btn=document.getElementById('cartera-sb-sync-btn');
+  if(!btn) return;
+  if(!SB.isConnected()){
+    btn.style.display='none';
+    return;
+  }
+  btn.style.display='';
+  btn.style.opacity = autenticado ? '1' : '.55';
+  btn.title = autenticado ? 'Conectado y autenticado con Supabase' : 'Supabase configurado pero SIN sesión autenticada — los datos no se están subiendo. Revisa el mensaje de error al iniciar sesión.';
+}
 
 // ══════════════════════════════════════════════════════
 // ESTADO GLOBAL
@@ -1955,12 +2010,24 @@ async function doLogin(){
       const r=await SB.ensureAuthSession(user.usuario, p);
       if(r.ok){
         await SB.syncMyCarteraAccess(user.usuario);
+        // Empujar cualquier dato local pendiente que aún no se haya subido
+        SB.fullSyncAll(true);
+        _updateSBStatusUI(true);
       } else {
         console.warn('No se pudo autenticar contra Supabase:', r.error);
+        _updateSBStatusUI(false);
         setTimeout(function(){
           mostrarModal('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Supabase no autenticó este usuario: '+esc(r.error||'error desconocido')+'. La sesión local sigue funcionando normal.','err');
         }, 600);
       }
+      // IMPORTANTE: la tabla global_data tiene lectura abierta a cualquiera con
+      // la anon key (política "read_global_data"), NO depende de haberse
+      // autenticado arriba. Por eso esto va FUERA del if(r.ok) — así, aunque
+      // Supabase Auth falle (ej. rate limit), igual traemos la lista real de
+      // carteras/usuarios en vez de dejar todo en 0. Además esperamos (await)
+      // a que termine ANTES de pintar la pantalla de carteras, porque antes
+      // se llamaba sin esperar y la pantalla se pintaba con localStorage vacío.
+      await SB.loadGlobal();
     }
     GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
     err.classList.add('hidden');
@@ -2045,13 +2112,14 @@ function showCarteraScreen(){
   const accesibles=isAdmin?carteras:carteras.filter(c=>(cu[c.id]||[]).includes(sesion.usuario));
   const listEl=document.getElementById('cartera-list');
   const emptyEl=document.getElementById('cartera-empty');
-  if(!accesibles.length&&!isAdmin){listEl.innerHTML='';emptyEl.classList.remove('hidden');return;}
+  if(!accesibles.length&&!isAdmin){listEl.innerHTML='';emptyEl.classList.remove('hidden');if(typeof _updateSBStatusUI==='function')_updateSBStatusUI(SB._authOk);return;}
   emptyEl.classList.add('hidden');
   if(!accesibles.length&&isAdmin){
     listEl.innerHTML=`<div style="text-align:center;padding:28px;color:#5A6E9A;border:2px dashed #D0DAF0;border-radius:12px">
       <div style="font-size:28px;margin-bottom:8px"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5h4l2 2.2h8.5A1.5 1.5 0 0 1 20.5 8.7v9.3A1.5 1.5 0 0 1 19 19.5H4.5A1.5 1.5 0 0 1 3 18V6.5z"/></svg></i></div>
       <div style="font-weight:600">No hay carteras creadas aún</div>
       <div style="font-size:12px;margin-top:4px">Haz clic en "Gestionar Carteras" para crear la primera.</div></div>`;
+    if(typeof _updateSBStatusUI==='function')_updateSBStatusUI(SB._authOk);
     return;
   }
   listEl.innerHTML=accesibles.map(c=>{
@@ -2077,6 +2145,7 @@ function showCarteraScreen(){
       </div>
     </div>`;
   }).join('');
+  if(typeof _updateSBStatusUI==='function')_updateSBStatusUI(SB._authOk);
 }
 
 function entrarCartera(carteraId){
