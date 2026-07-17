@@ -1320,8 +1320,22 @@ const SB = {
       const { data: sessionData } = await SB.client.auth.getSession();
       const uid = sessionData && sessionData.session && sessionData.session.user && sessionData.session.user.id;
       if (!uid) return;
+      // ── Un usuario con rol "admin" ve y puede entrar a TODAS las carteras
+      //    localmente (mismo bypass que usa showCarteraScreen: isAdmin?carteras:...).
+      //    Antes esto solo miraba cc_carteras_usuarios, que únicamente incluye
+      //    de forma automática al usuario ADMIN.usuario hardcodeado ('dmercado').
+      //    Cualquier OTRO usuario con rol=admin (ej. jrodriguez) quedaba sin
+      //    fila en user_cartera_access aunque localmente sí entrara a la
+      //    cartera — y Supabase (RLS) no sabe nada de "rol admin", solo mira
+      //    esta tabla. Por eso sus datos siempre llegaban en $0. ──
+      const usuarios = lsGet('cc_usuarios', []);
+      const usuarioObj = usuarios.find(u => u.usuario === usuario);
+      const esAdmin = usuarioObj && usuarioObj.rol === 'admin';
+      const todasLasCarteras = lsGet('cc_carteras', []).map(c => c.id);
       const carterasUsuarios = lsGet('cc_carteras_usuarios', {});
-      const misCarteras = Object.keys(carterasUsuarios).filter(cid => (carterasUsuarios[cid] || []).includes(usuario));
+      const misCarteras = esAdmin
+        ? todasLasCarteras
+        : Object.keys(carterasUsuarios).filter(cid => (carterasUsuarios[cid] || []).includes(usuario));
       for (const cid of misCarteras) {
         await SB.client.from('user_cartera_access')
           .upsert({ user_id: uid, cartera_id: String(cid) }, { onConflict: 'user_id,cartera_id' });
