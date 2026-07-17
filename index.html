@@ -508,7 +508,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
           </button>
         </div>
       </div>
-      <button class="btn btn-primary btn-full" onclick="doLogin()">Iniciar Sesión</button>
+      <button id="login-btn" class="btn btn-primary btn-full" onclick="doLogin()">Iniciar Sesión</button>
     </div>
     <div class="login-footer"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="1.6"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></i> Acceso restringido — Solo personal autorizado</div>
     <div class="login-copyright">© 2026 David Mercado Pastor — Todos los derechos reservados</div>
@@ -2002,6 +2002,20 @@ async function doLogin(){
   const u=document.getElementById('l-user').value.trim();
   const p=document.getElementById('l-pass').value;
   const err=document.getElementById('login-error');
+  const loginBtn=document.getElementById('login-btn');
+  // ── Dispositivo nuevo: este localStorage aún no tiene la lista real de
+  //    usuarios (puede tener SEED_USUARIOS con la clave vieja/default de 4
+  //    dígitos). Si no traemos primero la lista actual desde Supabase, el
+  //    login local "pasa" con la clave vieja pero luego Supabase Auth
+  //    rechaza (la cuenta real usa la clave nueva de 6 dígitos) — y recién
+  //    en el 2do intento (ya con cc_usuarios actualizado) todo carga bien.
+  //    Por eso ahora se trae esto ANTES de validar usuario/clave. La tabla
+  //    global_data tiene lectura abierta, no requiere sesión autenticada. ──
+  if(SB.isConnected()){
+    if(loginBtn){loginBtn.disabled=true;loginBtn.textContent='Verificando...';}
+    try{ await SB.loadGlobal(); } catch(e){ console.warn('SB.loadGlobal previo al login falló', e); }
+    if(loginBtn){loginBtn.disabled=false;loginBtn.textContent='Iniciar Sesión';}
+  }
   const user=GLOBAL.usuarios.find(x=>x.usuario===u&&x.clave===p);
   if(user){
     // Si Supabase está configurado, autenticar también contra Supabase Auth
@@ -2020,14 +2034,6 @@ async function doLogin(){
           mostrarModal('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Supabase no autenticó este usuario: '+esc(r.error||'error desconocido')+'. La sesión local sigue funcionando normal.','err');
         }, 600);
       }
-      // IMPORTANTE: la tabla global_data tiene lectura abierta a cualquiera con
-      // la anon key (política "read_global_data"), NO depende de haberse
-      // autenticado arriba. Por eso esto va FUERA del if(r.ok) — así, aunque
-      // Supabase Auth falle (ej. rate limit), igual traemos la lista real de
-      // carteras/usuarios en vez de dejar todo en 0. Además esperamos (await)
-      // a que termine ANTES de pintar la pantalla de carteras, porque antes
-      // se llamaba sin esperar y la pantalla se pintaba con localStorage vacío.
-      await SB.loadGlobal();
     }
     GLOBAL.sesion={usuario:user.usuario,rol:user.rol};
     err.classList.add('hidden');
