@@ -4494,26 +4494,30 @@ function renderCobros(){
 
           <!-- Formulario de registro -->
           <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:#fafbff">
-            <!-- Fila 1: Crédito + Monto + Cobrador + Botón -->
-            <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:14px;align-items:end;margin-bottom:12px">
+            <!-- Fila 1: Crédito + Cuota a Registrar (la cuota aparece justo después de elegir el crédito) -->
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;align-items:end;margin-bottom:12px">
               <div class="field" style="margin-bottom:0"><label>Crédito *</label>
                 <select id="cobro-cred" onchange="onCobroCreditoChange()">
                   <option value="">Seleccione crédito</option>${optsCreditos}</select></div>
+              <div id="cobro-cuotas-wrap" class="field" style="margin-bottom:0;visibility:hidden"><label>Cuota a Registrar *</label>
+                <select id="cobro-cuota" onchange="onCobroCuotaChange()"><option value="">Seleccione cuota</option></select></div>
+            </div>
+            <!-- Fila 2: Monto + Cobrador -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;margin-bottom:12px">
               <div class="field" style="margin-bottom:0"><label>Monto Recibido * ($)</label>
                 <input id="cobro-monto" type="number" min="0" oninput="onCobroMontoChange()"/></div>
               <div class="field" style="margin-bottom:0"><label>Nombre del Cobrador *</label>
                 <input id="cobro-cobrador" type="text"/></div>
-              <button class="btn btn-success" onclick="saveCobro()" style="padding:10px 20px;white-space:nowrap;height:42px"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Confirmar Pago</button>
             </div>
-            <!-- Fila 2: Cuota + Fecha + Observaciones -->
-            <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;align-items:start;margin-bottom:10px">
-              <div id="cobro-cuotas-wrap" class="field" style="margin-bottom:0;visibility:hidden"><label>Cuota a Registrar *</label>
-                <select id="cobro-cuota" onchange="onCobroCuotaChange()"><option value="">Seleccione cuota</option></select></div>
+            <!-- Fila 3: Fecha + Observaciones -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;margin-bottom:12px">
               <div class="field" style="margin-bottom:0"><label>Fecha de Recaudo *</label>
                 <input id="cobro-fecha" type="date" value="${h}"/></div>
               <div class="field" style="margin-bottom:0"><label>Observaciones</label>
                 <input id="cobro-obs" type="text"/></div>
             </div>
+            <!-- Botón al final, después de todos los campos -->
+            <button class="btn btn-success" onclick="saveCobro()" style="padding:10px 20px;width:100%;height:42px;margin-bottom:10px"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Confirmar Pago</button>
             <!-- Desglose cuota + alerta pago parcial -->
             <div id="cobro-desglose"></div>
             <div id="cobro-alerta" style="margin-top:6px"></div>
