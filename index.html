@@ -487,6 +487,20 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
   /* Botones de sincronización de la pantalla de carteras: apilados en vez de forzados en una fila */
   #cartera-sync-row{display:flex;flex-direction:column;gap:8px}
   #cartera-sync-row button{margin-left:0!important;width:100%}
+  /* ── Formularios con grid inline (crédito/monto/cobrador, filtros, resúmenes, etc.) ──
+     Toda la app usa grid-template-columns fijo por estilo inline (2fr 1fr 1fr auto, repeat(4,1fr), etc.),
+     lo que en pantalla angosta apretaba varias columnas en una sola fila y cortaba
+     los campos y el botón "Confirmar Pago". En móvil, se colapsan TODOS a 1 columna
+     y cada campo ocupa el ancho completo, apilados verticalmente. */
+  [style*="grid-template-columns"]{grid-template-columns:1fr!important}
+  /* Botones dentro de esos formularios (ej. "Confirmar Pago") ya no quedan a la
+     par de los campos ni se cortan por "white-space:nowrap" + ancho fijo. */
+  [style*="grid-template-columns"] > button,
+  [style*="grid-template-columns"] .btn{width:100%;white-space:normal!important;box-sizing:border-box}
+  /* Filtros con min-width fijo (ej. buscador de cobros) desbordaban horizontalmente */
+  .field[style*="min-width"]{min-width:0!important;width:100%}
+  /* Inputs de filtro con width fijo en px (ej. fecha desde/hasta, monto mín/máx) */
+  input[style*="width:1"],input[style*="width:9"],input[style*="width:8"]{width:100%!important}
 }
 
 /* ── Impresión / Exportar PDF ── */
