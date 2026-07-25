@@ -148,6 +148,8 @@ nav{display:flex;flex-direction:column;gap:3px;padding:12px;flex:1;overflow-y:au
 .sidebar.collapsed .sidebar-bottom #cartera-badge .nav-label{display:none}
 .nav-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1A1408;box-shadow:0 2px 10px rgba(201,168,76,.35);animation:navGlowPulse 3.2s ease-in-out infinite}
 @keyframes navGlowPulse{0%,100%{box-shadow:0 2px 10px rgba(201,168,76,.35)}50%{box-shadow:0 2px 16px rgba(201,168,76,.6)}}
+@keyframes cc-toast-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.gs-item:hover{background:var(--surface2)!important}
 .nav-btn:hover:not(.active){background:rgba(255,255,255,.12);color:#fff}
 /* Tooltip flotante para cuando el sidebar está colapsado */
 .sidebar.collapsed .nav-btn::after{content:attr(data-label);position:absolute;left:calc(100% + 10px);
@@ -537,7 +539,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
       <img class="login-icon brand-mark" id="brand-logo-login" alt="Créditos R&amp;M">
       <div class="login-title">Créditos <span>R&amp;M</span></div>
       <div class="login-sub">Sistema de Gestión de Préstamos</div>
-      <div class="login-version">v1.0.0</div>
+      <div class="login-version" id="login-version-badge" onclick="openHelpCenter('novedades')" style="cursor:pointer" title="Ver novedades">v1.0.0</div>
     </div>
     <div id="login-error" class="login-error hidden"></div>
     <div style="display:flex;flex-direction:column;gap:14px">
@@ -713,6 +715,12 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="header-right">
+        <!-- Búsqueda global rápida -->
+        <button id="gs-btn" onclick="openGlobalSearch()" title="Buscar (Ctrl+K)" style="display:none;width:34px;height:34px;
+          border-radius:9px;border:1.5px solid var(--glass-border);background:var(--surface2);color:var(--text);
+          align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        </button>
         <!-- Google Drive status badge -->
         <span id="gd-status" style="display:none;font-size:11px;font-weight:700;color:#fff;
           padding:3px 10px;border-radius:20px;background:#1A7A4A;cursor:pointer;white-space:nowrap"
@@ -797,6 +805,22 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9.3a2.8 2.8 0 0 1 5.4.9c0 1.9-2.6 2-2.6 3.8"/><circle cx="12" cy="17.2" r=".9" fill="currentColor" stroke="none"/></svg>
 </button>
 
+<!-- BÚSQUEDA GLOBAL RÁPIDA (Ctrl+K) -->
+<div id="gs-modal" class="modal-overlay hidden" style="align-items:flex-start;padding-top:10vh">
+  <div class="modal-box" style="width:560px;max-width:92vw;padding:0;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);flex-shrink:0"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+      <input id="gs-input" type="text" placeholder="Buscar cliente o crédito por nombre, cédula o número..."
+        oninput="onGlobalSearchInput()" onkeydown="onGlobalSearchKeydown(event)"
+        style="border:none;outline:none;flex:1;font-size:14.5px;padding:6px 0;background:transparent"/>
+      <button onclick="closeGlobalSearch()" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:2px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="gs-results" style="max-height:50vh;overflow-y:auto;padding:6px"></div>
+  </div>
+</div>
+
 <!-- CENTRO DE AYUDA / TUTORIALES -->
 <div id="help-modal" class="modal-overlay hidden" style="align-items:center">
   <div class="modal-box" style="width:900px;max-width:95vw;max-height:88vh;padding:0;overflow:hidden;display:flex;flex-direction:column">
@@ -812,6 +836,19 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
     <div style="display:flex;flex:1;min-height:0">
       <div id="help-nav" style="width:220px;flex-shrink:0;background:var(--surface2);border-right:1px solid var(--border);overflow-y:auto;padding:10px"></div>
       <div id="help-content" style="flex:1;overflow-y:auto;padding:22px 26px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AVISO DE CIERRE DE SESIÓN POR INACTIVIDAD -->
+<div id="inact-aviso-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-icon"><i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><polyline points="12,7 12,12 15.5,14"/></svg></i></div>
+    <div class="modal-title">¿Sigues ahí?</div>
+    <div class="modal-desc">Por seguridad, tu sesión se cerrará en 1 minuto por inactividad.</div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button class="btn btn-secondary" style="flex:1" onclick="doLogout()">Cerrar sesión ahora</button>
+      <button class="btn btn-primary" style="flex:1" onclick="seguirConectado()">Seguir conectado</button>
     </div>
   </div>
 </div>
@@ -929,12 +966,45 @@ function tienePermisoModulo(user, moduloId){
 // primera vez que inicia sesión, y un Centro de Ayuda con explicación de
 // cada módulo, disponible en cualquier momento desde el botón "?" flotante.
 
+// ── Versión de la app y "qué hay de nuevo" ──
+// Cada vez que agregues una mejora importante, súmale una entrada aquí
+// arriba de todo y sube APP_VERSION. La próxima vez que alguien entre,
+// verá automáticamente un resumen de lo nuevo (una sola vez por usuario).
+const APP_VERSION = '1.2.0';
+const CHANGELOG = [
+  {version:'1.2.0', fecha:'21 de julio de 2026', cambios:[
+    'Tutorial interactivo (recorrido guiado) y Centro de Ayuda con botón "?" para usuarios nuevos.',
+    'La app ya se puede instalar en el celular y funciona sin conexión a internet.',
+    'Notificaciones y confirmaciones con diseño propio, más claras y profesionales.',
+    'Cierre de sesión automático configurable por inactividad, con aviso previo.',
+    'Contraseñas protegidas con hash — ya no se guardan en texto plano en ninguna parte.',
+  ]},
+  {version:'1.1.0', fecha:'19 de julio de 2026', cambios:[
+    'Alertas de mora y próximos vencimientos en el Dashboard, con recordatorio directo por WhatsApp.',
+    'Respaldo automático diario a Google Drive (ventana de 7 días).',
+    'Auditoría completa: quién hizo qué y cuándo, incluyendo eliminaciones.',
+    'Permisos por módulo: cada usuario puede ver solo las secciones que le asignes.',
+    'Reportes PDF personalizables con tu logo y nombre de negocio.',
+    'Indicador de sincronización con Supabase y reintento automático si falla.',
+  ]},
+  {version:'1.0.0', fecha:'16 de julio de 2026', cambios:[
+    'Primera versión: gestión de clientes, créditos, cobros, caja, almacén y análisis de cartera.',
+    'Sincronización con Google Drive y Supabase.',
+  ]},
+];
+
 const HELP_CONTENT = [
+  {id:'novedades', label:'Novedades', icon:'🆕', secciones: CHANGELOG.map(v=>({
+    titulo:`Versión ${v.version} — ${v.fecha}`,
+    texto: v.cambios.map(c=>'• '+c).join('\n')
+  }))},
   {id:'primeros-pasos', label:'Primeros pasos', icon:'🚀', secciones:[
     {titulo:'¿Qué es esta aplicación?',
      texto:'Créditos R&M es un sistema para administrar el negocio de préstamos: clientes, créditos, cobros, caja, y (si aplica) un pequeño almacén de insumos. Todo lo que registras se guarda en este dispositivo y, si conectas Google Drive y/o Supabase, se sincroniza automáticamente para que puedas entrar desde varios dispositivos.'},
     {titulo:'Orden recomendado para empezar',
      texto:'1) Crea tus Clientes.  2) Regístrales un Crédito.  3) A medida que paguen, registra los Cobros.  4) Revisa el Dashboard para ver el estado general de la cartera.  5) Usa Caja para llevar aportes y gastos del negocio.'},
+    {titulo:'Buscador rápido',
+     texto:'Presiona Ctrl+K (o toca la lupa 🔍 arriba a la derecha) para buscar un cliente o crédito por nombre, cédula o número, y saltar directo a su ficha sin navegar por los menús.'},
     {titulo:'¿Y si algo no carga o se ve raro?',
      texto:'Revisa el ícono "Drive" y/o "Supabase" en la parte de arriba: si están en rojo o dicen "sin subir", puede que falte conexión a internet. Los datos nunca se pierden — quedan guardados en este dispositivo y se suben solos apenas haya señal.'},
   ]},
@@ -1094,10 +1164,178 @@ function finishTour(){
 function checkPrimerTour(){
   const sesion=GLOBAL.sesion;
   if(!sesion) return;
-  if(localStorage.getItem('cc_tour_visto_'+sesion.usuario)==='1') return;
-  setTimeout(()=>startTour(false), 700); // pequeño delay para que la UI ya esté pintada
+  const esNuevo = localStorage.getItem('cc_tour_visto_'+sesion.usuario)!=='1';
+  if(esNuevo){
+    setTimeout(()=>startTour(false), 700); // pequeño delay para que la UI ya esté pintada
+  }
+  checkNovedades(sesion.usuario, esNuevo);
+}
+// Muestra el changelog automáticamente cuando la app tiene una versión más
+// nueva de la que este usuario ya vio — una sola vez por usuario y por
+// versión. Si es la PRIMERA vez que este usuario entra (ver checkPrimerTour),
+// no se muestra aquí para no encimarse con el recorrido guiado; el
+// recorrido ya es suficiente bienvenida esa primera vez.
+function checkNovedades(usuario, esPrimeraVez){
+  const key='cc_version_vista_'+usuario;
+  const vistaAntes=localStorage.getItem(key);
+  if(vistaAntes===APP_VERSION) return; // ya vio esta versión
+  localStorage.setItem(key, APP_VERSION);
+  if(esPrimeraVez || !vistaAntes) return; // primera vez en la app: no mostrar, solo registrar
+  setTimeout(()=>openHelpCenter('novedades'), esPrimeraVez?0:900);
 }
 window.addEventListener('resize', ()=>{ if(!document.getElementById('tour-overlay').classList.contains('hidden')) showTourStep(); });
+document.addEventListener('DOMContentLoaded', ()=>{
+  const badge=document.getElementById('login-version-badge');
+  if(badge) badge.textContent='v'+APP_VERSION;
+});
+
+// ══════════════════════════════════════════════════════════════════
+// BÚSQUEDA GLOBAL RÁPIDA (Ctrl+K / Cmd+K)
+// ══════════════════════════════════════════════════════════════════
+let _gsResultados=[]; let _gsSeleccion=-1;
+function openGlobalSearch(){
+  if(!CARTERA_ID) return;
+  document.getElementById('gs-modal').classList.remove('hidden');
+  const input=document.getElementById('gs-input');
+  input.value=''; input.focus();
+  document.getElementById('gs-results').innerHTML=
+    '<div style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px">Escribe un nombre, cédula o número de crédito...</div>';
+  _gsResultados=[]; _gsSeleccion=-1;
+}
+function closeGlobalSearch(){ document.getElementById('gs-modal').classList.add('hidden'); }
+document.getElementById('gs-modal')&&document.getElementById('gs-modal').addEventListener('click',function(e){ if(e.target===this) closeGlobalSearch(); });
+
+function onGlobalSearchInput(){
+  const q=document.getElementById('gs-input').value.trim().toLowerCase();
+  const cont=document.getElementById('gs-results');
+  if(q.length<1){
+    cont.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px">Escribe un nombre, cédula o número de crédito...</div>';
+    _gsResultados=[]; _gsSeleccion=-1;
+    return;
+  }
+  const sesion=GLOBAL.sesion;
+  const userActual=sesion&&GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
+  const results=[];
+
+  if(tienePermisoModulo(userActual,'clientes')){
+    DB.clientes.forEach(c=>{
+      if((c.nombre||'').toLowerCase().includes(q) || (c.cedula||'').toLowerCase().includes(q) || (c.telefono||'').includes(q)){
+        results.push({tipo:'cliente', id:c.id, titulo:c.nombre, sub:'CC '+(c.cedula||'—')+(c.telefono?' · '+c.telefono:'')});
+      }
+    });
+  }
+  if(tienePermisoModulo(userActual,'creditos')){
+    DB.creditos.forEach(cr=>{
+      const cli=DB.clientes.find(x=>x.id===cr.clienteId);
+      const idMatch = q.replace('#','')===String(cr.id);
+      const nombreMatch = cli && ((cli.nombre||'').toLowerCase().includes(q) || (cli.cedula||'').toLowerCase().includes(q));
+      if(idMatch || nombreMatch){
+        results.push({tipo:'credito', id:cr.id, titulo:'Crédito #'+cr.id+' — '+((cli&&cli.nombre)||'—'), sub:fmt(cr.monto)+' · '+(cr.estado||'')});
+      }
+    });
+  }
+  _gsResultados=results.slice(0,20);
+  _gsSeleccion=-1;
+  if(!_gsResultados.length){
+    cont.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:12.5px">Sin resultados para "'+esc(q)+'"</div>';
+    return;
+  }
+  cont.innerHTML=_gsResultados.map((r,i)=>`
+    <div class="gs-item" data-i="${i}" onclick="gsIrA(${i})"
+      style="padding:10px 14px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px;flex-shrink:0">${r.tipo==='cliente'?'👤':'💳'}</span>
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.titulo)}</div>
+        <div style="font-size:11.5px;color:var(--muted)">${esc(r.sub)}</div>
+      </div>
+    </div>`).join('');
+}
+function onGlobalSearchKeydown(e){
+  if(e.key==='Escape'){ closeGlobalSearch(); return; }
+  if(!_gsResultados.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); _gsSeleccion=Math.min(_gsSeleccion+1,_gsResultados.length-1); gsResaltar(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); _gsSeleccion=Math.max(_gsSeleccion-1,0); gsResaltar(); }
+  else if(e.key==='Enter'){ e.preventDefault(); gsIrA(_gsSeleccion>=0?_gsSeleccion:0); }
+}
+function gsResaltar(){
+  document.querySelectorAll('#gs-results .gs-item').forEach((el,i)=>{
+    el.style.background = i===_gsSeleccion ? 'var(--surface2)' : 'transparent';
+  });
+  const el=document.querySelector('#gs-results .gs-item[data-i="'+_gsSeleccion+'"]');
+  if(el) el.scrollIntoView({block:'nearest'});
+}
+function gsIrA(i){
+  const r=_gsResultados[i]; if(!r) return;
+  closeGlobalSearch();
+  if(r.tipo==='cliente'){
+    const btn=document.querySelector('.nav-btn[data-tab="clientes"]');
+    if(btn) switchTab('clientes',btn);
+    setTimeout(()=>editCliente(r.id), 150);
+  } else {
+    const btn=document.querySelector('.nav-btn[data-tab="creditos"]');
+    if(btn) switchTab('creditos',btn);
+    setTimeout(()=>{ viewCreditoId=r.id; renderCreditos();
+      const el=document.querySelector('[data-credito-row="'+r.id+'"]');
+      if(el) el.scrollIntoView({block:'center', behavior:'smooth'});
+    }, 150);
+  }
+}
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){
+    e.preventDefault();
+    openGlobalSearch();
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// CIERRE DE SESIÓN AUTOMÁTICO POR INACTIVIDAD
+// ══════════════════════════════════════════════════════════════════
+// Útil cuando el dispositivo (tablet/celular) lo comparten varios
+// cobradores: si nadie toca la pantalla en un buen rato, la sesión se
+// cierra sola (no se pierde ningún dato — todo ya quedó guardado como
+// siempre). Configurable desde Datos; 0 = desactivado.
+function getInactividadMin(){ return lsGet('cc_inactividad_min', 20); }
+function setInactividadMin(min){ lsSet('cc_inactividad_min', min); resetInactividadTimer(); }
+
+let _inactTimer=null, _inactAvisoTimer=null, _inactUltimoReset=0;
+const INACT_AVISO_MS = 60*1000; // avisa 1 minuto antes de cerrar
+
+function resetInactividadTimer(){
+  clearTimeout(_inactTimer); clearTimeout(_inactAvisoTimer);
+  const modalAviso=document.getElementById('inact-aviso-modal');
+  if(modalAviso) modalAviso.classList.add('hidden');
+  const min=getInactividadMin();
+  const appVisible = !document.getElementById('app').classList.contains('hidden');
+  if(!GLOBAL.sesion || !appVisible || !min || min<=0) return; // desactivado o sin sesión
+  const totalMs=min*60*1000;
+  if(totalMs>INACT_AVISO_MS){
+    _inactAvisoTimer=setTimeout(mostrarAvisoInactividad, totalMs-INACT_AVISO_MS);
+  }
+  _inactTimer=setTimeout(cerrarSesionPorInactividad, totalMs);
+}
+function _marcarActividad(){
+  const ahora=Date.now();
+  if(ahora-_inactUltimoReset<5000) return; // throttle: máx. 1 reinicio cada 5s
+  _inactUltimoReset=ahora;
+  resetInactividadTimer();
+}
+['mousemove','keydown','click','touchstart','scroll'].forEach(ev=>{
+  document.addEventListener(ev, _marcarActividad, {passive:true});
+});
+function mostrarAvisoInactividad(){
+  const modal=document.getElementById('inact-aviso-modal');
+  if(modal) modal.classList.remove('hidden');
+}
+function seguirConectado(){
+  _inactUltimoReset=0; // fuerza que el próximo reset no quede bloqueado por el throttle
+  resetInactividadTimer();
+}
+function cerrarSesionPorInactividad(){
+  const modal=document.getElementById('inact-aviso-modal');
+  if(modal) modal.classList.add('hidden');
+  doLogout();
+  setTimeout(()=>customAlert('Tu sesión se cerró automáticamente por inactividad.','info'), 400);
+}
 
 // ══════════════════════════════════════════════════════
 // GOOGLE DRIVE INTEGRATION LAYER
@@ -1119,7 +1357,7 @@ const GD = {
     if (resp.error) {
       console.error('GD token error', resp);
       GD._showStatus('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Error: ' + (resp.error_description || resp.error), 'err');
-      alert('Error al conectar con Google Drive:\n\n' + (resp.error_description || resp.error) +
+      customAlert('Error al conectar con Google Drive:\n\n' + (resp.error_description || resp.error) +
         '\n\nVerifica que esta URL esté agregada en "Orígenes autorizados de JavaScript" en Google Cloud Console:\n' + window.location.origin);
       return;
     }
@@ -1174,7 +1412,7 @@ const GD = {
     GD._diagnostico = 'error_callback del tokenClient: ' + JSON.stringify(err);
     GD._showStatus('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> Error de conexión', 'err');
     if(err && err.type !== 'popup_closed') {
-      alert('No se pudo abrir la ventana de Google.\n\nVerifica que:\n1. Tu bloqueador de anuncios no esté bloqueando popups de accounts.google.com\n2. La URL "' + window.location.origin + '" esté agregada en Google Cloud Console > Credenciales > Orígenes autorizados de JavaScript');
+      customAlert('No se pudo abrir la ventana de Google.\n\nVerifica que:\n1. Tu bloqueador de anuncios no esté bloqueando popups de accounts.google.com\n2. La URL "' + window.location.origin + '" esté agregada en Google Cloud Console > Credenciales > Orígenes autorizados de JavaScript');
     }
   },
 
@@ -1278,7 +1516,7 @@ const GD = {
           clearInterval(GD._waitingForToken);
           GD._waitingForToken = null;
           GD._showStatus('<i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> No disponible', 'err');
-          alert('No se pudo conectar con Google Drive.\n\nPosibles causas:\n• Bloqueador de anuncios bloqueando accounts.google.com\n• Sin conexión a internet\n\nRecarga la página e intenta de nuevo.');
+          customAlert('No se pudo conectar con Google Drive.\n\nPosibles causas:\n• Bloqueador de anuncios bloqueando accounts.google.com\n• Sin conexión a internet\n\nRecarga la página e intenta de nuevo.');
         }
       }, 500);
       return;
@@ -1434,6 +1672,9 @@ const GD = {
         // configurada (así no se sobreescribe un cambio reciente hecho aquí).
         lsSet('cc_empresa_config', globalData.empresaConfig);
       }
+      if (globalData.inactividadMin!=null && lsGet('cc_inactividad_min', null)===null) {
+        lsSet('cc_inactividad_min', globalData.inactividadMin);
+      }
       if (Array.isArray(globalData.auditLogGlobal)) {
         // Mergear por fecha+usuario+detalle (no hay id propio en el log) para
         // no duplicar entradas ni perder las que solo existan en este dispositivo.
@@ -1457,6 +1698,7 @@ const GD = {
       nextIdUsuario:     lsGet('cc_next_usuario', 2),
       auditLogGlobal:    lsGet('cc_global_audit_log', []),
       empresaConfig:     lsGet('cc_empresa_config', null),
+      inactividadMin:    lsGet('cc_inactividad_min', null),
       _savedAt:          new Date().toISOString()
     };
     await GD.writeFile('cc_global.json', globalData);
@@ -1582,7 +1824,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_3JM4mktD-W2dAh7LXJscPg_DdfsMnBA';
 const SB = {
   client: null,
   _keys: ['clientes','creditos','pagos','gastos','aportes','castigos','productos','entradas','ventas','proveedores','auditLog','nextIds'],
-  _globalKeys: ['cc_usuarios','cc_carteras','cc_carteras_usuarios','cc_next_cartera','cc_next_usuario','cc_global_audit_log','cc_empresa_config'],
+  _globalKeys: ['cc_usuarios','cc_carteras','cc_carteras_usuarios','cc_next_cartera','cc_next_usuario','cc_global_audit_log','cc_empresa_config','cc_inactividad_min'],
 
   init() {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return; // sin configurar: desactivado
@@ -1744,8 +1986,45 @@ const SB = {
     if (!SB.client || !carteraId) return;
     SB._showStatus('<i class="ico-i" style="color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.5"/><path d="M20 12a8 8 0 0 1-14.5 4.5"/><polyline points="17,3 18.5,7.5 14,7.5"/><polyline points="7,21 5.5,16.5 10,16.5"/></svg></i> Guardando...', 'sync');
     try {
+      let valorAEnviar = value;
+      // ── Merge defensivo contra pérdida de datos por escrituras concurrentes ──
+      // Sin esto: si dos cobradores en dos dispositivos distintos registran
+      // cosas distintas casi al mismo tiempo (ej. dos cobros diferentes), el
+      // que llegue SEGUNDO a Supabase reemplazaría TODO el arreglo entero —
+      // borrando en la nube lo que el primero acababa de subir, aunque cada
+      // uno siguiera viendo "su" dato local sin saber que se perdió el del
+      // otro. Aquí se trae lo que ya haya en la nube y se combina por id con
+      // lo local ANTES de subir, así ninguno de los dos pierde su registro.
+      // (Sigue existiendo el caso, mucho más raro, de que dos personas editen
+      // EXACTAMENTE el mismo registro en el mismo instante — ahí gana quien
+      // suba último, como antes.)
+      if (Array.isArray(value)) {
+        const { data: actual } = await SB.client.from('cartera_data')
+          .select('data').eq('cartera_id', String(carteraId)).eq('key', key).maybeSingle();
+        const nube = (actual && Array.isArray(actual.data)) ? actual.data : [];
+        if (nube.length) {
+          const mapa = new Map();
+          nube.forEach(item => { if (item && item.id != null) mapa.set(item.id, item); });
+          value.forEach(item => { if (item && item.id != null) mapa.set(item.id, item); }); // lo local manda si coincide el id
+          valorAEnviar = Array.from(mapa.values());
+          // Si el merge trajo registros nuevos que este dispositivo no tenía
+          // localmente, se actualiza también la copia local para no perderlos.
+          if (valorAEnviar.length !== value.length && carteraId === CARTERA_ID && Array.isArray(DB[key])) {
+            DB[key] = valorAEnviar;
+            lsSet(pfx(key), valorAEnviar);
+          }
+        }
+      } else if (key === 'nextIds' && value && typeof value === 'object') {
+        const { data: actual } = await SB.client.from('cartera_data')
+          .select('data').eq('cartera_id', String(carteraId)).eq('key', 'nextIds').maybeSingle();
+        const nube = (actual && actual.data) || {};
+        const combinado = {...value};
+        Object.keys(nube).forEach(k => { combinado[k] = Math.max(combinado[k]||0, nube[k]||0); });
+        valorAEnviar = combinado;
+        if (carteraId === CARTERA_ID) { DB.nextIds = combinado; lsSet(pfx('nextIds'), combinado); }
+      }
       const { error } = await SB.client.from('cartera_data')
-        .upsert({ cartera_id: String(carteraId), key: key, data: value }, { onConflict: 'cartera_id,key' });
+        .upsert({ cartera_id: String(carteraId), key: key, data: valorAEnviar }, { onConflict: 'cartera_id,key' });
       if (error) { console.error('SB.saveCarteraKey error', key, error); SB._addToQueue('cartera', carteraId, key); return; }
       SB._removeFromQueue('cartera', carteraId, key);
       if (SB._queue.length === 0) {
@@ -1859,7 +2138,7 @@ document.addEventListener('DOMContentLoaded', () => SB._updateBadge());
 // ── Botón manual de sincronización con Supabase (pantalla de carteras) ──
 function _sbSyncClick(){
   if(!SB.isConnected()){
-    alert('Supabase no está configurado en este archivo (falta SUPABASE_URL / SUPABASE_ANON_KEY).');
+    customAlert('Supabase no está configurado en este archivo (falta SUPABASE_URL / SUPABASE_ANON_KEY).');
     return;
   }
   const label=document.getElementById('cartera-sb-sync-label');
@@ -1894,7 +2173,7 @@ function lsGet(k,fb){try{const v=localStorage.getItem(k);if(v===null||v===undefi
 function lsSet(k,v){
   try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn('lsSet error key='+k,e)}
   // Mirror global config keys to Drive / Supabase
-  const globalKeys=['cc_usuarios','cc_carteras','cc_carteras_usuarios','cc_next_cartera','cc_next_usuario','cc_global_audit_log','cc_empresa_config'];
+  const globalKeys=['cc_usuarios','cc_carteras','cc_carteras_usuarios','cc_next_cartera','cc_next_usuario','cc_global_audit_log','cc_empresa_config','cc_inactividad_min'];
   if(globalKeys.includes(k)){
     // ── IMPORTANTE: un timer POR CLAVE (no uno solo compartido). Antes, si dos
     //    de estas claves cambiaban casi al mismo tiempo (ej. crear un usuario
@@ -2634,6 +2913,9 @@ function applyRoleUI(){
   // Botón flotante de ayuda: visible solo dentro de una cartera
   const helpFab=document.getElementById('help-fab');
   if(helpFab) helpFab.style.display=noCartera?'none':'flex';
+  // Botón de búsqueda global: visible solo dentro de una cartera
+  const gsBtn=document.getElementById('gs-btn');
+  if(gsBtn) gsBtn.style.display=noCartera?'none':'flex';
   // Hide/show cartera badge
   const badge=document.getElementById('cartera-badge');
   if(badge) badge.style.display=noCartera?'none':'';
@@ -2702,7 +2984,7 @@ function gdConectarParaUsuario(user){
 }
 
 function gdConectarManual(correoHint){
-  if(!GD.tokenClient){alert('Google Drive no está disponible aún. Intenta en unos segundos.');return;}
+  if(!GD.tokenClient){customAlert('Google Drive no está disponible aún. Intenta en unos segundos.');return;}
   GD._usuarioEsperado=correoHint;
   GD.tokenClient.requestAccessToken({prompt:'consent', hint:correoHint, login_hint:correoHint});
 }
@@ -2788,6 +3070,7 @@ function entrarCartera(carteraId){
   if(btn)switchTab(primerModulo,btn);
   checkAutoBackup();
   checkPrimerTour();
+  resetInactividadTimer();
 }
 
 function entrarAdmin(){
@@ -2814,6 +3097,9 @@ function volverACarteras(){
 function doLogout(){
   if(SB.isConnected()) SB.signOut();
   GLOBAL.sesion=null;
+  clearTimeout(_inactTimer); clearTimeout(_inactAvisoTimer);
+  const modalInact=document.getElementById('inact-aviso-modal');
+  if(modalInact) modalInact.classList.add('hidden');
   CARTERA_ID=null;CARTERA_NOMBRE='';
   document.getElementById('app').classList.add('hidden');
   document.getElementById('cartera-screen').style.display='none';
@@ -2900,7 +3186,13 @@ const NAV_SUBMENUS = {
     {id:'cuotas', icon:'donut', label:'Estado de Cuotas', sub:'Distribución'},
     {id:'intereses', icon:'trend', label:'Intereses', sub:'Recaudados vs Pendientes'},
     {id:'capital2', realId:'capital', icon:'building', label:'Capital de Trabajo', sub:'Desplegado vs Caja'},
-    {id:'rendimiento', icon:'trend', label:'Rendimiento', sub:'Retorno sobre Capital'}
+    {id:'rendimiento', icon:'trend', label:'Rendimiento', sub:'Retorno sobre Capital'},
+    {id:'aging', icon:'donut', label:'Aging de Mora', sub:'Antigüedad por rangos'},
+    {id:'cobradores', icon:'target', label:'Desempeño Cobradores', sub:'Recaudo por cobrador'},
+    {id:'cosechas', icon:'linechart', label:'Cosechas', sub:'Calidad por mes de origen'},
+    {id:'proyeccion', icon:'trend', label:'Flujo de Caja Futuro', sub:'Próximos 7/30/90 días'},
+    {id:'concentracion', icon:'building', label:'Concentración', sub:'Riesgo por cliente'},
+    {id:'comparativo', icon:'barchart', label:'Comparativo', sub:'Este mes vs anterior'},
   ]},
   almacen:{setter:'setAlmacenSubTab', prefix:'alm-stab-', items:[
     {id:'productos', icon:'tag', label:'Insumos y Equipos', sub:'Catálogo de productos'},
@@ -2964,7 +3256,7 @@ function switchTab(id,btn){
   if(id!=='usuarios'){
     const userActual=sesion&&GLOBAL.usuarios.find(u=>u.usuario===sesion.usuario);
     if(userActual && !tienePermisoModulo(userActual,id)){
-      alert('No tienes permiso para acceder a este módulo. Contacta a un Administrador si crees que esto es un error.');
+      customAlert('No tienes permiso para acceder a este módulo. Contacta a un Administrador si crees que esto es un error.');
       return;
     }
   }
@@ -3076,10 +3368,10 @@ document.getElementById('confirm-modal').addEventListener('click',function(e){if
 function pedirEliminarCartera(){
   const sesion=GLOBAL.sesion;
   if((sesion&&sesion.rol)!=='admin'){
-    alert('Solo el Administrador puede eliminar datos de una cartera.');
+    customAlert('Solo el Administrador puede eliminar datos de una cartera.');
     return;
   }
-  if(!CARTERA_ID){alert('No hay cartera activa seleccionada.');return;}
+  if(!CARTERA_ID){customAlert('No hay cartera activa seleccionada.');return;}
 
   // Paso 1 — modal de advertencia con clave admin
   askAdmin(
@@ -3103,7 +3395,7 @@ function pedirEliminarCartera(){
           DB.productos=[]; DB.entradas=[]; DB.ventas=[]; DB.proveedores=[];
           DB.nextIds={cliente:1,credito:1,pago:1,gasto:1,aporte:1,castigo:1,producto:1,entrada:1,venta:1,proveedor:1};
           saveAll();
-          alert(`Todos los datos de la cartera "${CARTERA_NOMBRE}" han sido eliminados.`);
+          customAlert(`Todos los datos de la cartera "${CARTERA_NOMBRE}" han sido eliminados.`);
           renderDatos();
         }
       });
@@ -3115,7 +3407,7 @@ function pedirEliminarCartera(){
 function pedirEliminarTodo(){
   const sesion=GLOBAL.sesion;
   if((sesion&&sesion.rol)!=='admin'){
-    alert('Solo el Administrador puede realizar esta acción.');
+    customAlert('Solo el Administrador puede realizar esta acción.');
     return;
   }
   const totalCarteras=GLOBAL.carteras.length;
@@ -3149,7 +3441,7 @@ function pedirEliminarTodo(){
           lsSet('cc_usuarios',[{id:1,usuario:ADMIN.usuario,clave:ADMIN.clave,rol:'admin'}]);
           lsSet('cc_next_usuario',2);
           try{sessionStorage.removeItem('cc_sesion')}catch{}
-          alert('Todos los datos han sido eliminados. La aplicación vuelve al estado inicial.');
+          customAlert('Todos los datos han sido eliminados. La aplicación vuelve al estado inicial.');
           doLogout();
         }
       });
@@ -3535,12 +3827,12 @@ function editCliente(id){
 function saveCliente(){
   const nombre=document.getElementById('fc-nombre').value.trim();
   const cedula=document.getElementById('fc-cedula').value.trim();
-  if(!nombre||!cedula)return alert('Nombre y cédula son obligatorios');
+  if(!nombre||!cedula)return customAlert('Nombre y cédula son obligatorios');
   // Duplicate check (skip current record when editing)
   const dupCedula=DB.clientes.find(c=>c.cedula.toLowerCase()===cedula.toLowerCase()&&c.id!==editClienteId);
-  if(dupCedula)return alert(`Ya existe un cliente con la cédula "${cedula}" (${dupCedula.nombre}). No se puede duplicar.`);
+  if(dupCedula)return customAlert(`Ya existe un cliente con la cédula "${cedula}" (${dupCedula.nombre}). No se puede duplicar.`);
   const dupNombre=DB.clientes.find(c=>c.nombre.toLowerCase()===nombre.toLowerCase()&&c.id!==editClienteId);
-  if(dupNombre)return alert(`Ya existe un cliente con el nombre "${nombre}" (cédula ${dupNombre.cedula}). Si es persona diferente, ajuste el nombre ligeramente para distinguirlos.`);
+  if(dupNombre)return customAlert(`Ya existe un cliente con el nombre "${nombre}" (cédula ${dupNombre.cedula}). Si es persona diferente, ajuste el nombre ligeramente para distinguirlos.`);
   const obj={nombre,cedula,
     telefono:document.getElementById('fc-telefono').value.trim(),
     email:document.getElementById('fc-email').value.trim(),
@@ -3561,7 +3853,7 @@ function saveCliente(){
 function eliminarCliente(id){
   const c=DB.clientes.find(x=>x.id===id); if(!c)return;
   const nc=DB.creditos.filter(x=>x.clienteId===id).length;
-  if(nc>0)return alert(`No se puede eliminar: ${c.nombre} tiene ${nc} crédito(s). Elimine primero los créditos.`);
+  if(nc>0)return customAlert(`No se puede eliminar: ${c.nombre} tiene ${nc} crédito(s). Elimine primero los créditos.`);
   askAdmin(`Eliminar cliente "${c.nombre}"`,`CC ${c.cedula} — Esta acción no se puede deshacer.`,()=>{
     logAudit('eliminación','Cliente',`${c.nombre} · CC ${c.cedula||'—'}`);
     DB.clientes=DB.clientes.filter(x=>x.id!==id);
@@ -3656,7 +3948,7 @@ function confirmarImportClientes(){
   importClientesPending=null;
   toggleImportClientes(true);
   renderClientes();
-  alert(`${agregados.length} cliente(s) agregados correctamente.`);
+  customAlert(`${agregados.length} cliente(s) agregados correctamente.`);
 }
 
 
@@ -3730,7 +4022,7 @@ function pdfHeader(doc, titulo){
 function exportResumenCredito(credId){
   var jsPDF=window.jspdf.jsPDF;
   var cred=DB.creditos.find(function(c){return c.id===credId;});
-  if(!cred){alert('Crédito no encontrado');return;}
+  if(!cred){customAlert('Crédito no encontrado');return;}
   var cli=DB.clientes.find(function(c){return c.id===cred.clienteId;})||{};
   var filas=calcEstadoReal(cred,DB.pagos,cred.tasaMoraDiaria,hoy());
 
@@ -3876,7 +4168,7 @@ function fmtNum(n){
 function exportContratoCredito(credId){
   var jsPDF=window.jspdf.jsPDF;
   var cred=DB.creditos.find(function(c){return c.id===credId;});
-  if(!cred){alert('Crédito no encontrado');return;}
+  if(!cred){customAlert('Crédito no encontrado');return;}
   var cli=DB.clientes.find(function(c){return c.id===cred.clienteId;})||{};
   var filas=calcEstadoReal(cred,DB.pagos,cred.tasaMoraDiaria,hoy());
   var cuotaBase=filas.length>0?Math.round(filas[0].valorCuotaBase):0;
@@ -4032,7 +4324,7 @@ function numLetras(n){
 function exportReciboPago(pagoId){
   var jsPDF=window.jspdf.jsPDF;
   var pago=DB.pagos.find(function(p){return p.id===pagoId;});
-  if(!pago){alert('Pago no encontrado');return;}
+  if(!pago){customAlert('Pago no encontrado');return;}
   var cred=DB.creditos.find(function(c){return c.id===pago.creditoId;})||{};
   var cli=DB.clientes.find(function(c){return c.id===cred.clienteId;})||{};
   var pagosHasta=DB.pagos.filter(function(x){return x.id<=pago.id;});
@@ -4153,7 +4445,7 @@ function buildCreditoRows(lista,h){
     const estadoBadge=c.estado==='castigado'?badge('Castigado','red')
       :c.estado==='reestructurado'?badge('Reestructurado','gray')
       :conMora?badge('Con mora','mora'):conParcial?badge('Pago parcial','yellow'):badge('Al día','green');
-    return`<tr>
+    return`<tr data-credito-row="${c.id}">
       <td style="color:var(--muted)">#${c.id}</td>
       <td><strong>${esc((cli&&cli.nombre))}</strong></td>
       <td>${fmt(c.monto)}</td><td>${c.tasaMensual}%</td>
@@ -4456,7 +4748,7 @@ function previewCredito(){
   const monto=+document.getElementById('frc-monto').value;
   const tasa=+document.getElementById('frc-tasa').value;
   const nc=+document.getElementById('frc-cuotas').value;
-  if(!monto||!tasa||!nc){alert('Completa monto, tasa y número de cuotas primero');return;}
+  if(!monto||!tasa||!nc){customAlert('Completa monto, tasa y número de cuotas primero');return;}
   const r=tasa/100; let saldo=monto;
   const cuota=+document.getElementById('frc-cuota-val').value||
     (monto*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1);
@@ -4478,13 +4770,24 @@ function saveCredito(){
   const monto=+document.getElementById('frc-monto').value;
   const tasa=Math.round((+document.getElementById('frc-tasa').value)*100000000)/100000000; // hasta 8 decimales
   const nc=+document.getElementById('frc-cuotas').value;
-  if(!clienteId||!monto||!nc) return alert('Complete los campos obligatorios: cliente, monto y numero de cuotas.');
-  if(tasa===null||tasa===undefined||isNaN(tasa)||document.getElementById('frc-tasa').value==='') return alert('Ingresa la tasa de interes (puede ser 0 para crédito sin interés).');
-  const r=tasa/100;
-  const cuotaFija = r===0 ? monto/nc : (monto*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1);
+  if(!clienteId||!monto||!nc) return customAlert('Complete los campos obligatorios: cliente, monto y numero de cuotas.');
+  if(tasa===null||tasa===undefined||isNaN(tasa)||document.getElementById('frc-tasa').value==='') return customAlert('Ingresa la tasa de interes (puede ser 0 para crédito sin interés).');
+  // ── Validaciones financieras estrictas ──
+  if(monto<0) return customAlert('El monto del crédito no puede ser negativo.');
+  if(monto>0 && monto<1000) return customAlert('El monto parece demasiado bajo. Verifica que esté en pesos completos (ej. 500000, no 500).');
+  if(!Number.isInteger(nc) || nc<1) return customAlert('El número de cuotas debe ser un entero de 1 o más.');
+  if(nc>360) return customAlert('El número de cuotas parece excesivo (más de 360). Verifica el valor.');
+  if(tasa<0) return customAlert('La tasa de interés no puede ser negativa.');
+  if(tasa>100) return customAlert('La tasa de interés parece demasiado alta (más de 100% por periodo). Verifica el valor.');
+  const moraVal=document.getElementById('frc-mora').value;
+  if(moraVal!==''&&(+moraVal)<0) return customAlert('La tasa de mora diaria no puede ser negativa.');
+  if(moraVal!==''&&(+moraVal)>10) return customAlert('La tasa de mora diaria parece demasiado alta (más de 10% diario). Verifica el valor.');
   var fecha=document.getElementById('frc-fecha').value;
   if(!fecha||!fecha.match(/^\d{4}-\d{2}-\d{2}$/))fecha=hoy();
-  const moraVal=document.getElementById('frc-mora').value;
+  if(fecha>hoy()) return customAlert('La fecha de desembolso no puede ser en el futuro.');
+  if(fecha<'2000-01-01') return customAlert('La fecha de desembolso no es válida.');
+  const r=tasa/100;
+  const cuotaFija = r===0 ? monto/nc : (monto*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1);
   DB.creditos.push({
     id:DB.nextIds.credito, clienteId, monto:Math.round(monto), tasaMensual:tasa, numeroCuotas:nc,
     periodicidad:document.getElementById('frc-periodo').value,
@@ -4524,16 +4827,16 @@ let _carpetaRaiz = null; // FileSystemDirectoryHandle
 
 async function seleccionarCarpetaDescarga(){
   if(!('showDirectoryPicker' in window)){
-    alert('Tu navegador no soporta la selección de carpeta.\nUsa Chrome o Edge versión 86+.');
+    customAlert('Tu navegador no soporta la selección de carpeta.\nUsa Chrome o Edge versión 86+.');
     return;
   }
   try {
     _carpetaRaiz = await window.showDirectoryPicker({mode:'readwrite'});
     localStorage.setItem('cc_carpeta_nombre', _carpetaRaiz.name);
     mostrarEstadoCarpeta();
-    alert(`Carpeta configurada: "${_carpetaRaiz.name}"\nTodos los documentos se guardarán aquí automáticamente en subcarpetas.`);
+    customAlert(`Carpeta configurada: "${_carpetaRaiz.name}"\nTodos los documentos se guardarán aquí automáticamente en subcarpetas.`);
   } catch(e) {
-    if(e.name!=='AbortError') alert('Error al seleccionar carpeta: '+e.message);
+    if(e.name!=='AbortError') customAlert('Error al seleccionar carpeta: '+e.message);
   }
 }
 
@@ -4556,6 +4859,7 @@ const SUBCARPETAS = {
   backup:    'Backups_Excel',
   plantilla: 'Plantillas',
   datos:     'Datos_Gestion',
+  analisis:  'Informes_Analisis',
 };
 
 async function _getSubcarpeta(tipo){
@@ -4788,9 +5092,18 @@ function guardarEdicionCredito(id){
   const monto=+document.getElementById('erc-monto').value;
   const nc=+document.getElementById('erc-cuotas').value;
   const fecha=document.getElementById('erc-fecha').value;
-  if(!clienteId||!monto||!nc)return alert('Complete los campos obligatorios: cliente, monto y número de cuotas.');
-  if(document.getElementById('erc-tasa').value===''||isNaN(+document.getElementById('erc-tasa').value))return alert('Ingresa la tasa de interés mensual (puede ser 0 para crédito sin interés).');
-  if(!fecha||!fecha.match(/^\d{4}-\d{2}-\d{2}$/))return alert('Fecha de desembolso inválida.');
+  if(!clienteId||!monto||!nc)return customAlert('Complete los campos obligatorios: cliente, monto y número de cuotas.');
+  if(document.getElementById('erc-tasa').value===''||isNaN(+document.getElementById('erc-tasa').value))return customAlert('Ingresa la tasa de interés mensual (puede ser 0 para crédito sin interés).');
+  if(!fecha||!fecha.match(/^\d{4}-\d{2}-\d{2}$/))return customAlert('Fecha de desembolso inválida.');
+  if(monto<0)return customAlert('El monto del crédito no puede ser negativo.');
+  if(!Number.isInteger(nc)||nc<1)return customAlert('El número de cuotas debe ser un entero de 1 o más.');
+  if(nc>360)return customAlert('El número de cuotas parece excesivo (más de 360). Verifica el valor.');
+  const tasaEd=+document.getElementById('erc-tasa').value;
+  if(tasaEd<0)return customAlert('La tasa de interés no puede ser negativa.');
+  if(tasaEd>100)return customAlert('La tasa de interés parece demasiado alta (más de 100% por periodo). Verifica el valor.');
+  const moraEdCheck=document.getElementById('erc-mora').value;
+  if(moraEdCheck!==''&&(+moraEdCheck)<0)return customAlert('La tasa de mora diaria no puede ser negativa.');
+  if(fecha>hoy())return customAlert('La fecha de desembolso no puede ser en el futuro.');
   // Si hay cuota deseada, recalcular la tasa inversa con alta precisión
   const cuotaDeseadaEl=document.getElementById('erc-cuota-deseada');
   const cuotaDeseada=cuotaDeseadaEl&&+cuotaDeseadaEl.value>0?+cuotaDeseadaEl.value:0;
@@ -4818,7 +5131,7 @@ function guardarEdicionCredito(id){
   auditEdit(c);
   document.getElementById('edit-cred-overlay').remove();
   renderCreditos();
-  alert(`Crédito #${id} actualizado correctamente.`);
+  customAlert(`Crédito #${id} actualizado correctamente.`);
 }
 
 
@@ -4936,7 +5249,7 @@ function confirmarImportCreditos(){
   importCreditosPending=null;
   toggleImportCreditos(true);
   renderCreditos();
-  alert(`${agregados.length} crédito(s) agregados correctamente.`);
+  customAlert(`${agregados.length} crédito(s) agregados correctamente.`);
 }
 
 // ══════════════════════════════════════════════════════
@@ -5307,7 +5620,7 @@ function confirmarImportCobros(){
   importCobrosPending=null;
   toggleImportCobros(true);
   renderCobros();
-  alert(`${agregados.length} cobro(s) registrados correctamente.`);
+  customAlert(`${agregados.length} cobro(s) registrados correctamente.`);
 }
 
 function descargarPlantillaCobros(){
@@ -5616,11 +5929,11 @@ function confirmarLiquidacion(credId){
   const cobrador=document.getElementById('cobro-cobrador').value.trim();
   const obs=document.getElementById('cobro-obs').value.trim();
   const fecha=document.getElementById('cobro-fecha').value||hoy();
-  if(!cobrador)return alert('Ingresa el nombre del cobrador antes de liquidar.');
+  if(!cobrador)return customAlert('Ingresa el nombre del cobrador antes de liquidar.');
 
   const allFilas=calcEstadoReal(cred,DB.pagos,cred.tasaMoraDiaria,fecha);
   const pendientes=allFilas.filter(f=>f.estado!=='pagada');
-  if(!pendientes.length)return alert('Este crédito ya está saldado.');
+  if(!pendientes.length)return customAlert('Este crédito ya está saldado.');
 
   // Cuota actual: leer valores editados por el usuario (o usar los calculados)
   const cuotaActual=pendientes[0];
@@ -5689,7 +6002,7 @@ function confirmarLiquidacion(credId){
       cred.estado='saldado';
       save('pagos'); save('nextIds'); save('creditos');
       renderCobros();
-      alert(`Crédito #${credId} de ${(cli&&cli.nombre)||'—'} liquidado correctamente.\nTotal cobrado: ${fmt(montoLiquidacion)}`);
+      customAlert(`Crédito #${credId} de ${(cli&&cli.nombre)||'—'} liquidado correctamente.\nTotal cobrado: ${fmt(montoLiquidacion)}`);
     }
   });
 }
@@ -5701,12 +6014,14 @@ function saveCobro(){
   const fecha=document.getElementById('cobro-fecha').value;
   const cobrador=document.getElementById('cobro-cobrador').value.trim();
   const obs=document.getElementById('cobro-obs').value.trim();
-  if(!credId||!numCuota||!monto||!cobrador)return alert('Complete todos los campos obligatorios');
-  if(monto<=0)return alert('El monto debe ser mayor a cero');
+  if(!credId||!numCuota||!monto||!cobrador)return customAlert('Complete todos los campos obligatorios');
+  if(monto<=0)return customAlert('El monto debe ser mayor a cero');
+  if(fecha&&fecha>hoy())return customAlert('La fecha de recaudo no puede ser en el futuro.');
+  if(fecha&&fecha<'2000-01-01')return customAlert('La fecha de recaudo no es válida.');
   DB.pagos.push({id:DB.nextIds.pago,creditoId:credId,numeroCuota:numCuota,monto,fecha,cobrador,observacion:obs,...auditInfo('cobro manual')});
   DB.nextIds.pago++;
   save('pagos'); save('nextIds');
-  alert('Pago registrado. Las cuotas futuras han sido recalculadas automáticamente.');
+  customAlert('Pago registrado. Las cuotas futuras han sido recalculadas automáticamente.');
   renderCobros();
 }
 function eliminarPago(id){
@@ -5780,9 +6095,10 @@ function guardarEdicionCobro(id){
   const monto=+document.getElementById('eco-monto').value;
   const cuota=+document.getElementById('eco-cuota').value;
   const fecha=document.getElementById('eco-fecha').value;
-  if(!monto||monto<=0)return alert('El monto debe ser mayor a cero.');
-  if(!cuota||cuota<1)return alert('El número de cuota debe ser al menos 1.');
-  if(!fecha||!fecha.match(/^\d{4}-\d{2}-\d{2}$/))return alert('Fecha inválida.');
+  if(!monto||monto<=0)return customAlert('El monto debe ser mayor a cero.');
+  if(!cuota||cuota<1)return customAlert('El número de cuota debe ser al menos 1.');
+  if(!fecha||!fecha.match(/^\d{4}-\d{2}-\d{2}$/))return customAlert('Fecha inválida.');
+  if(fecha>hoy())return customAlert('La fecha del cobro no puede ser en el futuro.');
   const medio=document.getElementById('eco-medio').value;
   const obsLibre=document.getElementById('eco-obs').value.trim();
   p.monto=Math.round(monto);
@@ -5794,7 +6110,7 @@ function guardarEdicionCobro(id){
   auditEdit(p);
   document.getElementById('edit-cobro-overlay').remove();
   renderCobros();
-  alert(`Cobro #${id} actualizado correctamente.`);
+  customAlert(`Cobro #${id} actualizado correctamente.`);
 }
 
 
@@ -6108,16 +6424,23 @@ function getCierresMes(){
 function guardarCierresMes(){
   var mes=gVal('cierre-mes-input');
   var fecha=gVal('cierre-fecha-input');
-  if(!mes||!fecha)return alert('Seleccione mes y fecha de cierre');
+  if(!mes||!fecha)return customAlert('Seleccione mes y fecha de cierre');
   var cierres=getCierresMes();
   cierres[mes]=fecha;
   localStorage.setItem('cierresMes_'+(DB.cartaId||'default'), JSON.stringify(cierres));
   renderCierresLista(); renderCapitalDespliegue();
 }
 function limpiarCierresMes(){
-  if(!confirm('Eliminar todas las fechas de cierre de mes?'))return;
-  localStorage.removeItem('cierresMes_'+(DB.cartaId||'default'));
-  renderCierresLista(); renderCapitalDespliegue();
+  askConfirm({
+    titulo:'Eliminar fechas de cierre',
+    desc:'¿Eliminar todas las fechas de cierre de mes?',
+    esperado:null,
+    btnTexto:'Eliminar',
+    cb:function(){
+      localStorage.removeItem('cierresMes_'+(DB.cartaId||'default'));
+      renderCierresLista(); renderCapitalDespliegue();
+    }
+  });
 }
 function eliminarCierre(mes){
   var cierres=getCierresMes();
@@ -6651,7 +6974,7 @@ function selectRefinTipo(tipo){
     else{btn.style.borderColor='var(--border)';btn.style.background='var(--bg)';}
   });
   var credId=+document.getElementById('refin-cred').value;
-  if(!credId){alert('Selecciona un crédito primero');return;}
+  if(!credId){customAlert('Selecciona un crédito primero');return;}
   var h=hoy();
   var c=DB.creditos.find(function(x){return x.id===credId;});
   var filas=calcEstadoReal(c,DB.pagos,c.tasaMoraDiaria,h);
@@ -6853,6 +7176,48 @@ function mostrarModal(msg, tipo){
   setTimeout(function(){if(div.parentNode)div.remove();},3500);
 }
 
+// ── Notificación tipo toast (reemplaza customAlert() nativo) ──────────────────
+// A diferencia de customAlert(), esto NO bloquea la ejecución de JavaScript — pero
+// como el patrón usado en toda la app es "return customAlert('mensaje')" (la
+// función ya termina ahí de todas formas), el comportamiento visible es
+// idéntico: se detiene la acción y se muestra el mensaje. Se usa
+// textContent (no innerHTML) para el mensaje porque a veces incluye datos
+// escritos por el usuario (nombres, cédulas) y así no hay riesgo de que un
+// caracter como "<" rompa el toast.
+function customAlert(msg, tipo){
+  tipo = tipo || 'err';
+  var estilos = {
+    err:  {color:'#C0392B', bg:'#FFF0EE', icono:'✕'},
+    ok:   {color:'#1A7A4A', bg:'#EDF7F0', icono:'✓'},
+    warn: {color:'#B07D12', bg:'#FFF8E8', icono:'⚠'},
+    info: {color:'#1A3260', bg:'#EEF2FA', icono:'ℹ'},
+  };
+  var e = estilos[tipo] || estilos.err;
+  var stackWrap = document.getElementById('cc-toast-stack');
+  if(!stackWrap){
+    stackWrap = document.createElement('div');
+    stackWrap.id = 'cc-toast-stack';
+    stackWrap.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:9999;'
+      +'display:flex;flex-direction:column;gap:8px;align-items:center;max-width:92vw;pointer-events:none';
+    document.body.appendChild(stackWrap);
+  }
+  var div=document.createElement('div');
+  div.style.cssText='background:'+e.bg+';color:'+e.color+';border:1.5px solid '+e.color+';border-radius:10px;'
+    +'padding:12px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.18);'
+    +'max-width:420px;display:flex;align-items:flex-start;gap:9px;pointer-events:auto;cursor:pointer;'
+    +'animation:cc-toast-in .18s ease-out';
+  var span=document.createElement('span');
+  span.textContent=msg;
+  span.style.cssText='flex:1;line-height:1.4';
+  var icon=document.createElement('span');
+  icon.textContent=e.icono;
+  icon.style.cssText='font-weight:800;flex-shrink:0';
+  div.appendChild(icon); div.appendChild(span);
+  div.onclick=function(){ if(div.parentNode) div.remove(); };
+  stackWrap.appendChild(div);
+  setTimeout(function(){ if(div.parentNode) div.remove(); }, 4200);
+}
+
 // ══════════════════════════════════════════════════════
 // CASTIGO DE CARTERA — dar de baja un crédito incobrable
 // ══════════════════════════════════════════════════════
@@ -6959,17 +7324,24 @@ function confirmarCastigo(credId){
   if(!c)return;
   var capPend=calcCapitalPendienteCredito(c);
   var motivo=(gVal('castigo-motivo')||'').trim();
-  if(!confirm('¿Confirmas castigar el crédito #'+credId+' por '+fmt(capPend)+'? Esta acción no se puede deshacer.'))return;
-  c.estado='castigado';
-  c.fechaCastigo=hoy();
-  DB.castigos.push({
-    id:DB.nextIds.castigo, creditoId:credId, fecha:hoy(), capitalCastigado:capPend,
-    motivo:motivo||'Sin motivo especificado', ...auditInfo('castigo de cartera')
+  askConfirm({
+    titulo:'Confirmar castigo',
+    desc:'¿Confirmas castigar el crédito #'+credId+' por '+fmt(capPend)+'? Esta acción no se puede deshacer.',
+    esperado:null,
+    btnTexto:'Castigar crédito',
+    cb:function(){
+      c.estado='castigado';
+      c.fechaCastigo=hoy();
+      DB.castigos.push({
+        id:DB.nextIds.castigo, creditoId:credId, fecha:hoy(), capitalCastigado:capPend,
+        motivo:motivo||'Sin motivo especificado', ...auditInfo('castigo de cartera')
+      });
+      DB.nextIds.castigo++;
+      save('creditos'); save('castigos'); save('nextIds');
+      mostrarModal('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Crédito #'+credId+' castigado. Se dio de baja '+fmt(capPend)+' del capital de la cartera.','ok');
+      renderCastigoPanel();
+    }
   });
-  DB.nextIds.castigo++;
-  save('creditos'); save('castigos'); save('nextIds');
-  mostrarModal('<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Crédito #'+credId+' castigado. Se dio de baja '+fmt(capPend)+' del capital de la cartera.','ok');
-  renderCastigoPanel();
 }
 
 // ── Clientes sub-tab state ──
@@ -7009,11 +7381,13 @@ function setCobrosSubTab(tab){
 var _analisisSubTab = 'resumen';
 function setAnalisisSubTab(tab){
   _analisisSubTab = tab;
-  ['resumen','evol1','evol2','eficiencia','cuotas','intereses','capital','rendimiento'].forEach(function(t){
+  const TODAS=['resumen','evol1','evol2','eficiencia','cuotas','intereses','capital','rendimiento',
+    'aging','cobradores','cosechas','proyeccion','concentracion','comparativo'];
+  TODAS.forEach(function(t){
     var btn = document.getElementById('an-stab-'+t);
     if(btn) btn.classList.toggle('active', t===tab);
   });
-  ['resumen','evol1','evol2','eficiencia','cuotas','intereses','capital','rendimiento'].forEach(function(t){
+  TODAS.forEach(function(t){
     var panel = document.getElementById('an-panel-'+t);
     if(panel) panel.style.display = (t === tab) ? 'block' : 'none';
   });
@@ -7278,8 +7652,10 @@ function saveAporte(){
   const descripcion=document.getElementById('aporte-descripcion').value.trim();
   const monto=+document.getElementById('aporte-monto').value;
   const fecha=document.getElementById('aporte-fecha').value;
-  if(!descripcion||!monto||!fecha)return alert('Complete todos los campos obligatorios');
-  if(monto<=0)return alert('El monto debe ser mayor a cero');
+  if(!descripcion||!monto||!fecha)return customAlert('Complete todos los campos obligatorios');
+  if(monto<=0)return customAlert('El monto debe ser mayor a cero');
+  if(fecha>hoy())return customAlert('La fecha del aporte no puede ser en el futuro.');
+  if(fecha<'2000-01-01')return customAlert('La fecha del aporte no es válida.');
   DB.aportes.push({id:DB.nextIds.aporte,descripcion,monto,fecha,...auditInfo('aporte de capital')});
   DB.nextIds.aporte++;
   save('aportes'); save('nextIds');
@@ -7299,8 +7675,10 @@ function saveGasto(){
   const descripcion=document.getElementById('gasto-descripcion').value.trim();
   const monto=+document.getElementById('gasto-monto').value;
   const fecha=document.getElementById('gasto-fecha').value;
-  if(!descripcion||!monto||!fecha)return alert('Complete todos los campos obligatorios');
-  if(monto<=0)return alert('El monto debe ser mayor a cero');
+  if(!descripcion||!monto||!fecha)return customAlert('Complete todos los campos obligatorios');
+  if(monto<=0)return customAlert('El monto debe ser mayor a cero');
+  if(fecha>hoy())return customAlert('La fecha del gasto no puede ser en el futuro.');
+  if(fecha<'2000-01-01')return customAlert('La fecha del gasto no es válida.');
   DB.gastos.push({id:DB.nextIds.gasto,categoria,descripcion,monto,fecha,...auditInfo('registro de gasto')});
   DB.nextIds.gasto++;
   save('gastos'); save('nextIds');
@@ -7356,8 +7734,8 @@ function guardarEdicionGasto(id){
   const desc=document.getElementById('eg-desc').value.trim();
   const monto=+document.getElementById('eg-monto').value;
   const fecha=document.getElementById('eg-fecha').value;
-  if(!desc||!monto||!fecha)return alert('Complete todos los campos obligatorios.');
-  if(monto<=0)return alert('El monto debe ser mayor a cero.');
+  if(!desc||!monto||!fecha)return customAlert('Complete todos los campos obligatorios.');
+  if(monto<=0)return customAlert('El monto debe ser mayor a cero.');
   g.categoria=document.getElementById('eg-cat').value;
   g.descripcion=desc;
   g.monto=Math.round(monto);
@@ -7366,7 +7744,7 @@ function guardarEdicionGasto(id){
   auditEdit(g);
   document.getElementById('edit-gasto-overlay').remove();
   renderCaja();
-  alert(`Gasto #G${String(id).padStart(3,'0')} actualizado correctamente.`);
+  customAlert(`Gasto #G${String(id).padStart(3,'0')} actualizado correctamente.`);
 }
 
 // ── Soporte de Gasto PDF ──────────────────────────────────────────────────────
@@ -7437,6 +7815,132 @@ function imprimirSoporteGasto(id){
 // ══════════════════════════════════════════════════════════════════════════════
 // ANÁLISIS DE CARTERA
 // ══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// NUEVOS INDICADORES DE ANÁLISIS
+// ══════════════════════════════════════════════════════
+
+// ── Aging de mora: cuotas vencidas agrupadas por rango de días de atraso ──
+function computeAgingMora(){
+  const h=hoy();
+  const buckets=[
+    {label:'1-30 días',  min:1,  max:30,  count:0, monto:0, color:'#B07D12'},
+    {label:'31-60 días', min:31, max:60,  count:0, monto:0, color:'#D97706'},
+    {label:'61-90 días', min:61, max:90,  count:0, monto:0, color:'#C0392B'},
+    {label:'+90 días',   min:91, max:Infinity, count:0, monto:0, color:'#7B1E1E'},
+  ];
+  let clientesUnicos={};
+  DB.creditos.forEach(cred=>{
+    if(cred.estado==='castigado') return;
+    const filas=calcEstadoReal(cred, DB.pagos, cred.tasaMoraDiaria, h);
+    filas.forEach(f=>{
+      if((f.estado==='vencida'||f.estado==='parcial_vencida') && f.diasMora>0){
+        const b=buckets.find(x=>f.diasMora>=x.min && f.diasMora<=x.max);
+        if(b){ b.count++; b.monto+=f.saldoPendienteCuota||0; clientesUnicos[cred.clienteId]=true; }
+      }
+    });
+  });
+  return {buckets, totalClientesEnMora:Object.keys(clientesUnicos).length, totalMonto:buckets.reduce((a,b)=>a+b.monto,0)};
+}
+
+// ── Desempeño por cobrador (según el nombre registrado en cada cobro) ──
+function computeDesempenoCobradores(desde,hasta){
+  const porCobrador={};
+  DB.pagos.forEach(p=>{
+    if(desde && p.fecha<desde) return;
+    if(hasta && p.fecha>hasta) return;
+    const nombre=(p.cobrador||'Sin asignar').trim()||'Sin asignar';
+    if(!porCobrador[nombre]) porCobrador[nombre]={nombre,totalCobrado:0,numCobros:0,clientesUnicos:new Set(),capitalCobrado:0,interesCobrado:0};
+    const c=porCobrador[nombre];
+    c.totalCobrado+=p.monto; c.numCobros++;
+    const cred=DB.creditos.find(x=>x.id===p.creditoId);
+    if(cred) c.clientesUnicos.add(cred.clienteId);
+  });
+  return Object.values(porCobrador)
+    .map(c=>({...c, clientesAtendidos:c.clientesUnicos.size, promedioPorCobro:c.numCobros>0?c.totalCobrado/c.numCobros:0}))
+    .sort((a,b)=>b.totalCobrado-a.totalCobrado);
+}
+
+// ── Análisis de cosecha: calidad de cartera según el mes de originación ──
+function computeCosechas(){
+  const h=hoy();
+  const porMes={};
+  DB.creditos.forEach(cred=>{
+    const mes=cred.fechaDesembolso.slice(0,7);
+    if(!porMes[mes]) porMes[mes]={mes,numCreditos:0,capitalOtorgado:0,cuotasTotales:0,cuotasVencidas:0,cuotasPagadas:0};
+    const m=porMes[mes];
+    m.numCreditos++; m.capitalOtorgado+=cred.monto;
+    const filas=calcEstadoReal(cred, DB.pagos, cred.tasaMoraDiaria, h);
+    filas.forEach(f=>{
+      m.cuotasTotales++;
+      if(f.estado==='pagada') m.cuotasPagadas++;
+      else if(f.estado==='vencida'||f.estado==='parcial_vencida') m.cuotasVencidas++;
+    });
+  });
+  return Object.values(porMes)
+    .map(m=>({...m, tasaMora:m.cuotasTotales>0?(m.cuotasVencidas/m.cuotasTotales*100):0}))
+    .sort((a,b)=>a.mes.localeCompare(b.mes));
+}
+
+// ── Proyección de flujo de caja futuro (cuotas pendientes por vencer) ──
+function computeProyeccionCaja(){
+  const h=hoy();
+  const horizontes=[{dias:7,total:0,cuotas:0},{dias:30,total:0,cuotas:0},{dias:90,total:0,cuotas:0}];
+  const detalle=[]; // para tabla de detalle de los próximos 30 días
+  DB.creditos.forEach(cred=>{
+    if(cred.estado==='castigado') return;
+    const filas=calcEstadoReal(cred, DB.pagos, cred.tasaMoraDiaria, h);
+    const cli=DB.clientes.find(c=>c.id===cred.clienteId);
+    filas.forEach(f=>{
+      if(f.estado!=='pendiente') return;
+      const diasPara=daysBetween(h,f.fechaVencimiento);
+      horizontes.forEach(hz=>{ if(diasPara<=hz.dias){ hz.total+=f.saldoPendienteCuota||f.totalACobrar||0; hz.cuotas++; } });
+      if(diasPara<=30){
+        detalle.push({cliente:(cli&&cli.nombre)||'—', creditoId:cred.id, cuota:f.cuota, fecha:f.fechaVencimiento, monto:f.saldoPendienteCuota||f.totalACobrar||0, dias:diasPara});
+      }
+    });
+  });
+  detalle.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  return {horizontes, detalle};
+}
+
+// ── Concentración de cartera: riesgo por dependencia de pocos clientes ──
+function computeConcentracion(){
+  const d=computeAnalisis('','');
+  const clientes=(d.porCliente||[]).slice().sort((a,b)=>b.cap-a.cap);
+  const totalCap=clientes.reduce((a,c)=>a+c.cap,0)||1;
+  const top5=clientes.slice(0,5).reduce((a,c)=>a+c.cap,0);
+  const top10=clientes.slice(0,10).reduce((a,c)=>a+c.cap,0);
+  return {
+    clientes: clientes.slice(0,10).map(c=>({...c, pct: c.cap/totalCap*100})),
+    totalCap, pctTop5: top5/totalCap*100, pctTop10: top10/totalCap*100,
+    numClientesTotal: clientes.length
+  };
+}
+
+// ── Comparativo: mes actual vs mes anterior ──
+function computeComparativoPeriodo(){
+  const h=hoy();
+  const inicioMesActual=h.slice(0,8)+'01';
+  const finMesAnteriorD=new Date(inicioMesActual+'T00:00:00'); finMesAnteriorD.setDate(0);
+  const finMesAnterior=finMesAnteriorD.toISOString().slice(0,10);
+  const inicioMesAnterior=finMesAnterior.slice(0,8)+'01';
+  const actual=computeAnalisis(inicioMesActual,h);
+  const anterior=computeAnalisis(inicioMesAnterior,finMesAnterior);
+  function variacion(a,b){ if(b===0) return a===0?0:100; return (a-b)/Math.abs(b)*100; }
+  const recaudoActual=actual.totalCapitalRecaudado+actual.totalInteresesRecaudados+actual.totalMoraRecaudada;
+  const recaudoAnterior=anterior.totalCapitalRecaudado+anterior.totalInteresesRecaudados+anterior.totalMoraRecaudada;
+  return {
+    inicioMesActual, inicioMesAnterior, finMesAnterior,
+    items:[
+      {label:'Recaudo total', actual:recaudoActual, anterior:recaudoAnterior, var:variacion(recaudoActual,recaudoAnterior), esMonto:true},
+      {label:'Tasa de recaudo', actual:actual.tasaRecaudo, anterior:anterior.tasaRecaudo, var:variacion(actual.tasaRecaudo,anterior.tasaRecaudo), esMonto:false, esPct:true},
+      {label:'Índice de mora', actual:actual.tasaMora, anterior:anterior.tasaMora, var:variacion(actual.tasaMora,anterior.tasaMora), esMonto:false, esPct:true, invertido:true},
+      {label:'Utilidad del período', actual:actual.utilidades, anterior:anterior.utilidades, var:variacion(actual.utilidades,anterior.utilidades), esMonto:true},
+      {label:'Capital otorgado', actual:actual.totalCapitalOtorgado, anterior:anterior.totalCapitalOtorgado, var:variacion(actual.totalCapitalOtorgado,anterior.totalCapitalOtorgado), esMonto:true},
+    ]
+  };
+}
+
 function computeAnalisis(desde, hasta){
   const h = hoy();
   const credsFiltro = DB.creditos.filter(c => {
@@ -7978,6 +8482,11 @@ function renderAnalisisBody(desde,hasta){
     <div id="an-panel-resumen" style="display:${isActive('resumen')}">
       ${panelHeader('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="12" width="4" height="8.5" rx="1"/><rect x="10" y="7" width="4" height="13.5" rx="1"/><rect x="16.5" y="3.5" width="4" height="17" rx="1"/></svg></i>','Resumen de Cartera','KPIs generales del período seleccionado')}
       <div style="padding:22px">
+        <div style="text-align:right;margin-bottom:14px">
+          <button class="btn btn-primary btn-sm" onclick="generarInformeEjecutivo('${desde||''}','${hasta||''}')">
+            <i class="ico-i" style="color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h9l4 4V21a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1z"/><path d="M15 2.8V7h4.2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15.5" x2="16" y2="15.5"/></svg></i> Descargar Informe Ejecutivo (PDF)
+          </button>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px">
           ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h9l4 4V21a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1z"/><path d="M15 2.8V7h4.2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15.5" x2="16" y2="15.5"/><line x1="8" y1="19" x2="13" y2="19"/></svg></i>','Créditos en Cartera', (d.porCliente||[]).reduce((a,c)=>a+c.creditos,0),'#1A3260')}
           ${statCard('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7.5" width="19" height="12" rx="1.6"/><path d="M8.5 7.5V5.8a1.3 1.3 0 0 1 1.3-1.3h4.4a1.3 1.3 0 0 1 1.3 1.3V7.5"/><line x1="2.5" y1="13" x2="21.5" y2="13"/></svg></i>','Capital Otorgado',     fmt(d.totalCapitalOtorgado),'#1A3260')}
@@ -8162,7 +8671,310 @@ function renderAnalisisBody(desde,hasta){
         </div>
       </div>
     </div>
+
+    <!-- ════ PANEL: AGING DE MORA ════ -->
+    <div id="an-panel-aging" style="display:${isActive('aging')}">
+      ${(function(){
+        const ag=computeAgingMora();
+        const maxMonto=Math.max(1,...ag.buckets.map(b=>b.monto));
+        return panelHeader('<i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><polyline points="12,7 12,12 15.5,14"/></svg></i>','Aging de Mora — Antigüedad de la Cartera Vencida','Cuánto tiempo llevan atrasadas las cuotas, agrupado por rango de días','linear-gradient(90deg,#fff5f0,#fff)')
+        +`<div style="padding:22px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+            ${ag.buckets.map(b=>`
+              <div style="padding:16px;background:var(--bg);border-radius:11px;border:1px solid var(--border);border-top:3px solid ${b.color}">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">${b.label}</div>
+                <div style="font-size:20px;font-weight:800;color:${b.color};margin-top:6px">${fmt(b.monto)}</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${b.count} cuota(s)</div>
+                <div style="background:var(--surface2);border-radius:20px;height:6px;margin-top:8px">
+                  <div style="height:100%;width:${(b.monto/maxMonto*100)}%;background:${b.color};border-radius:20px"></div>
+                </div>
+              </div>`).join('')}
+          </div>
+          <div style="padding:14px 18px;background:var(--bg);border-radius:9px;border:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div><span style="font-size:11.5px;color:var(--muted)">Total en mora (todos los rangos)</span><br><strong style="font-size:16px;color:#C0392B">${fmt(ag.totalMonto)}</strong></div>
+            <div><span style="font-size:11.5px;color:var(--muted)">Clientes con al menos una cuota en mora</span><br><strong style="font-size:16px;color:var(--text)">${ag.totalClientesEnMora}</strong></div>
+          </div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Entre más se concentre el monto en "+90 días", más urgente es priorizar cobranza o considerar castigo de esos créditos.</div>
+        </div>`;
+      })()}
+    </div>
+
+    <!-- ════ PANEL: DESEMPEÑO COBRADORES ════ -->
+    <div id="an-panel-cobradores" style="display:${isActive('cobradores')}">
+      ${(function(){
+        const cobs=computeDesempenoCobradores(desde,hasta);
+        const maxTotal=Math.max(1,...cobs.map(c=>c.totalCobrado));
+        return panelHeader('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.3"/><path d="M3.5 19.5c0-3.3 2.5-5.8 5.5-5.8s5.5 2.5 5.5 5.8"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 13.3c2.3.2 4 2.2 4 4.9"/></svg></i>','Desempeño por Cobrador','Con base en el nombre de cobrador registrado en cada cobro, para el período seleccionado')
+        +`<div style="padding:22px">
+          ${!cobs.length?'<div style="text-align:center;padding:50px;color:var(--muted)">Sin cobros registrados en este período.</div>':`
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Cobrador</th><th>Total Recaudado</th><th># Cobros</th><th>Clientes Atendidos</th><th>Promedio por Cobro</th><th></th></tr></thead>
+            <tbody>
+              ${cobs.map(c=>`<tr>
+                <td><strong>${esc(c.nombre)}</strong></td>
+                <td style="font-weight:700;color:#1A7A4A">${fmt(c.totalCobrado)}</td>
+                <td>${c.numCobros}</td>
+                <td>${c.clientesAtendidos}</td>
+                <td>${fmt(c.promedioPorCobro)}</td>
+                <td style="width:120px"><div style="background:var(--surface2);border-radius:20px;height:8px">
+                  <div style="height:100%;width:${(c.totalCobrado/maxTotal*100)}%;background:#1A7A4A;border-radius:20px"></div>
+                </div></td>
+              </tr>`).join('')}
+            </tbody>
+          </table></div>`}
+          <div style="font-size:10.5px;color:var(--muted);margin-top:10px">"Sin asignar" agrupa los cobros donde no se escribió un nombre de cobrador.</div>
+        </div>`;
+      })()}
+    </div>
+
+    <!-- ════ PANEL: COSECHAS ════ -->
+    <div id="an-panel-cosechas" style="display:${isActive('cosechas')}">
+      ${(function(){
+        const cos=computeCosechas();
+        return panelHeader('<i class="ico-i" style="color:#7B2D8B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M12 12c-4 0-7-2.5-7-7 4 0 7 2.5 7 7z"/><path d="M12 12c4 0 7-2.5 7-7-4 0-7 2.5-7 7z"/><path d="M8 21h8"/><path d="M12 12v9"/></svg></i>','Análisis de Cosecha (Vintage)','Calidad de la cartera según el mes en que se originó cada crédito — detecta si algún mes se prestó con peor criterio')
+        +`<div style="padding:22px">
+          ${!cos.length?'<div style="text-align:center;padding:50px;color:var(--muted)">Sin créditos registrados.</div>':`
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Mes de Origen</th><th># Créditos</th><th>Capital Otorgado</th><th>Cuotas Pagadas</th><th>Cuotas en Mora</th><th>% Mora de la Cosecha</th></tr></thead>
+            <tbody>
+              ${cos.map(m=>{
+                const col=m.tasaMora<=10?'#1A7A4A':m.tasaMora<=25?'#B07D12':'#C0392B';
+                return `<tr>
+                <td><strong>${m.mes}</strong></td>
+                <td>${m.numCreditos}</td>
+                <td>${fmt(m.capitalOtorgado)}</td>
+                <td>${m.cuotasPagadas}</td>
+                <td>${m.cuotasVencidas}</td>
+                <td><div style="display:flex;align-items:center;gap:8px">
+                  <div style="background:var(--surface2);border-radius:20px;height:8px;flex:1;max-width:100px">
+                    <div style="height:100%;width:${Math.min(100,m.tasaMora)}%;background:${col};border-radius:20px"></div>
+                  </div>
+                  <strong style="color:${col};font-size:12.5px">${m.tasaMora.toFixed(1)}%</strong>
+                </div></td>
+              </tr>`;}).join('')}
+            </tbody>
+          </table></div>`}
+          <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Un mes con % de mora notablemente más alto que los demás suele indicar que en ese periodo se aprobaron créditos con menos control.</div>
+        </div>`;
+      })()}
+    </div>
+
+    <!-- ════ PANEL: PROYECCIÓN DE FLUJO DE CAJA ════ -->
+    <div id="an-panel-proyeccion" style="display:${isActive('proyeccion')}">
+      ${(function(){
+        const pr=computeProyeccionCaja();
+        return panelHeader('<i class="ico-i" style="color:#1A7A4A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="1.6"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="7.5" y1="13.5" x2="10" y2="13.5"/></svg></i>','Proyección de Flujo de Caja Futuro','Cuánto se espera recaudar según las cuotas pendientes por vencer — hacia adelante, no histórico')
+        +`<div style="padding:22px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+            ${pr.horizontes.map(h2=>`
+              <div style="padding:18px;background:var(--bg);border-radius:11px;border:1px solid var(--border);text-align:center">
+                <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Próximos ${h2.dias} días</div>
+                <div style="font-size:22px;font-weight:800;color:#1A7A4A;margin-top:8px">${fmt(h2.total)}</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:4px">${h2.cuotas} cuota(s) por vencer</div>
+              </div>`).join('')}
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Detalle — próximos 30 días</div>
+          ${!pr.detalle.length?'<div style="text-align:center;padding:30px;color:var(--muted)">Nada por vencer en los próximos 30 días.</div>':`
+          <div class="tbl-wrap" style="max-height:340px;overflow-y:auto"><table>
+            <thead><tr><th>Cliente</th><th>Crédito</th><th>Cuota</th><th>Vence</th><th>Monto</th></tr></thead>
+            <tbody>${pr.detalle.map(d=>`<tr>
+              <td>${esc(d.cliente)}</td><td>#${d.creditoId}</td><td>#${d.cuota}</td>
+              <td>${fmtDate(d.fecha)} ${d.dias===0?'<span style="color:#B07D12;font-weight:700">(hoy)</span>':'('+d.dias+'d)'}</td>
+              <td style="font-weight:700">${fmt(d.monto)}</td>
+            </tr>`).join('')}</tbody>
+          </table></div>`}
+          <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Esta proyección asume que las cuotas se pagan a tiempo — no incluye lo que ya está en mora (ver pestaña "Aging de Mora").</div>
+        </div>`;
+      })()}
+    </div>
+
+    <!-- ════ PANEL: CONCENTRACIÓN DE CARTERA ════ -->
+    <div id="an-panel-concentracion" style="display:${isActive('concentracion')}">
+      ${(function(){
+        const cc=computeConcentracion();
+        const colorRiesgo=cc.pctTop5>=50?'#C0392B':cc.pctTop5>=30?'#B07D12':'#1A7A4A';
+        return panelHeader('<i class="ico-i" style="color:#7B2D8B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="7" height="12" rx="1"/><rect x="13" y="4.5" width="7" height="16.5" rx="1"/></svg></i>','Concentración de Cartera — Riesgo por Cliente','Qué tan dependiente es tu cartera de unos pocos clientes grandes')
+        +`<div style="padding:22px">
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px">
+            <div style="padding:18px;background:var(--bg);border-radius:11px;border:1px solid var(--border);border-top:3px solid ${colorRiesgo};text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Top 5 clientes concentran</div>
+              <div style="font-size:26px;font-weight:800;color:${colorRiesgo};margin-top:6px">${cc.pctTop5.toFixed(1)}%</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">del capital total prestado</div>
+            </div>
+            <div style="padding:18px;background:var(--bg);border-radius:11px;border:1px solid var(--border);text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Top 10 clientes concentran</div>
+              <div style="font-size:26px;font-weight:800;color:var(--text);margin-top:6px">${cc.pctTop10.toFixed(1)}%</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">de ${cc.numClientesTotal} clientes en total</div>
+            </div>
+          </div>
+          ${cc.pctTop5>=50?`<div style="padding:12px 16px;background:#FFF0EE;border:1px solid #C0392B;border-radius:9px;color:#8A2A20;font-size:12.5px;margin-bottom:16px">
+            <strong>Riesgo alto de concentración.</strong> Si alguno de tus 5 clientes más grandes deja de pagar, el impacto en tu cartera sería significativo. Considera diversificar hacia más clientes con montos menores.
+          </div>`:''}
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Cliente</th><th>Capital Prestado</th><th>% de la Cartera</th></tr></thead>
+            <tbody>${cc.clientes.map(c=>`<tr>
+              <td>${esc(c.nombre)}</td><td style="font-weight:700">${fmt(c.cap)}</td>
+              <td><div style="display:flex;align-items:center;gap:8px">
+                <div style="background:var(--surface2);border-radius:20px;height:8px;flex:1;max-width:100px">
+                  <div style="height:100%;width:${Math.min(100,c.pct)}%;background:#7B2D8B;border-radius:20px"></div>
+                </div>
+                <strong style="font-size:12.5px">${c.pct.toFixed(1)}%</strong>
+              </div></td>
+            </tr>`).join('')}</tbody>
+          </table></div>
+        </div>`;
+      })()}
+    </div>
+
+    <!-- ════ PANEL: COMPARATIVO PERÍODOS ════ -->
+    <div id="an-panel-comparativo" style="display:${isActive('comparativo')}">
+      ${(function(){
+        const cp=computeComparativoPeriodo();
+        return panelHeader('<i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="12" width="4" height="8.5" rx="1"/><rect x="10" y="7" width="4" height="13.5" rx="1"/><rect x="16.5" y="3.5" width="4" height="17" rx="1"/></svg></i>','Comparativo — Este Mes vs Mes Anterior','Variación porcentual de los indicadores clave frente al mes anterior')
+        +`<div style="padding:22px">
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Indicador</th><th>Mes Anterior</th><th>Este Mes</th><th>Variación</th></tr></thead>
+            <tbody>${cp.items.map(it=>{
+              const mejora = it.invertido ? it.var<=0 : it.var>=0;
+              const col = it.var===0?'var(--muted)':(mejora?'#1A7A4A':'#C0392B');
+              const flecha = it.var===0?'—':(it.var>0?'▲':'▼');
+              const fmtVal=v=>it.esMonto?fmt(v):(it.esPct?v.toFixed(1)+'%':v);
+              return `<tr>
+                <td><strong>${it.label}</strong></td>
+                <td>${fmtVal(it.anterior)}</td>
+                <td>${fmtVal(it.actual)}</td>
+                <td style="font-weight:800;color:${col}">${flecha} ${Math.abs(it.var).toFixed(1)}%</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Para "Índice de mora", una flecha ▼ (verde) es buena noticia — significa que la mora bajó.</div>
+        </div>`;
+      })()}
+    </div>
 `;
+}
+
+// ── Informe Ejecutivo en PDF: resumen consolidado de todos los indicadores ──
+function generarInformeEjecutivo(desde, hasta){
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var h=hoy();
+  var d=computeAnalisis(desde,hasta);
+  var aging=computeAgingMora();
+  var cobs=computeDesempenoCobradores(desde,hasta).slice(0,8);
+  var conc=computeConcentracion();
+  var cp=computeComparativoPeriodo();
+  var titulo='Informe Ejecutivo de Cartera'+(CARTERA_NOMBRE?' — '+CARTERA_NOMBRE:'');
+  var y=32;
+
+  function seccionTitulo(txt){
+    doc.setFillColor(240,244,255);
+    doc.rect(14,y,182,7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(15,32,68);
+    doc.text(txt,17,y+5);
+    y+=11;
+  }
+  function checkPageBreak(minSpace){
+    if(y>270-minSpace){ doc.addPage(); y=32; }
+  }
+
+  // ── Sección: KPIs generales ──
+  seccionTitulo('RESUMEN GENERAL'+(desde||hasta?' ('+(desde||'inicio')+' a '+(hasta||h)+')':''));
+  doc.autoTable({
+    startY:y, margin:{left:14,right:14},
+    body:[
+      ['Capital Otorgado', fmtNum(d.totalCapitalOtorgado), 'Intereses Esperados', fmtNum(d.totalInteresesEsperados)],
+      ['Total Recaudado', fmtNum(d.totalCapitalRecaudado+d.totalInteresesRecaudados+d.totalMoraRecaudada), 'Mora Pendiente', fmtNum(d.totalMoraPendiente)],
+      ['Saldo Capital', fmtNum(d.totalSaldoCapital), 'Utilidad del Período', fmtNum(d.utilidades)],
+    ],
+    styles:{fontSize:8.5,cellPadding:3,textColor:[20,30,50]},
+    columnStyles:{0:{fontStyle:'bold',cellWidth:45},1:{cellWidth:45,halign:'right'},2:{fontStyle:'bold',cellWidth:45},3:{cellWidth:47,halign:'right'}},
+    didDrawPage:function(){pdfWatermark(doc);pdfHeader(doc,titulo);}
+  });
+  y=doc.lastAutoTable.finalY+10;
+
+  // ── Sección: Salud de la cartera ──
+  checkPageBreak(40);
+  seccionTitulo('SALUD DE LA CARTERA');
+  doc.autoTable({
+    startY:y, margin:{left:14,right:14},
+    head:[['Indicador','Valor']],
+    body:[
+      ['Tasa de Recaudo', d.tasaRecaudo.toFixed(1)+'%'],
+      ['Índice de Morosidad', d.tasaMora.toFixed(1)+'%'],
+      ['Eficiencia de Intereses', (d.totalInteresesEsperados>0?((d.totalInteresesRecaudados+d.totalMoraRecaudada)/d.totalInteresesEsperados*100):0).toFixed(1)+'%'],
+      ['Recuperación de Capital', (d.totalCapitalOtorgado>0?(d.totalCapitalRecaudado/d.totalCapitalOtorgado*100):0).toFixed(1)+'%'],
+    ],
+    styles:{fontSize:8.5,cellPadding:3},
+    headStyles:{fillColor:[15,32,68],textColor:[255,255,255],fontStyle:'bold'},
+    didDrawPage:function(){pdfWatermark(doc);pdfHeader(doc,titulo);}
+  });
+  y=doc.lastAutoTable.finalY+10;
+
+  // ── Sección: Aging de mora ──
+  checkPageBreak(40);
+  seccionTitulo('ANTIGÜEDAD DE LA CARTERA VENCIDA (AGING)');
+  doc.autoTable({
+    startY:y, margin:{left:14,right:14},
+    head:[['Rango','# Cuotas','Monto']],
+    body:aging.buckets.map(function(b){return [b.label, String(b.count), fmtNum(b.monto)];}),
+    foot:[['Total en mora', String(aging.buckets.reduce(function(a,b){return a+b.count;},0)), fmtNum(aging.totalMonto)]],
+    styles:{fontSize:8.5,cellPadding:3},
+    headStyles:{fillColor:[192,57,43],textColor:[255,255,255],fontStyle:'bold'},
+    footStyles:{fillColor:[245,245,245],textColor:[20,30,50],fontStyle:'bold'},
+    columnStyles:{2:{halign:'right'}},
+    didDrawPage:function(){pdfWatermark(doc);pdfHeader(doc,titulo);}
+  });
+  y=doc.lastAutoTable.finalY+10;
+
+  // ── Sección: Comparativo mes vs mes anterior ──
+  checkPageBreak(45);
+  seccionTitulo('COMPARATIVO — ESTE MES VS. MES ANTERIOR');
+  doc.autoTable({
+    startY:y, margin:{left:14,right:14},
+    head:[['Indicador','Mes Anterior','Este Mes','Variación']],
+    body:cp.items.map(function(it){
+      var fv=function(v){return it.esMonto?fmtNum(v):(it.esPct?v.toFixed(1)+'%':String(v));};
+      var signo=it.var>0?'+':'';
+      return [it.label, fv(it.anterior), fv(it.actual), signo+it.var.toFixed(1)+'%'];
+    }),
+    styles:{fontSize:8.5,cellPadding:3},
+    headStyles:{fillColor:[15,32,68],textColor:[255,255,255],fontStyle:'bold'},
+    didDrawPage:function(){pdfWatermark(doc);pdfHeader(doc,titulo);}
+  });
+  y=doc.lastAutoTable.finalY+10;
+
+  // ── Sección: Concentración de cartera ──
+  checkPageBreak(45);
+  seccionTitulo('CONCENTRACIÓN DE CARTERA — TOP 5 CLIENTES: '+conc.pctTop5.toFixed(1)+'%');
+  doc.autoTable({
+    startY:y, margin:{left:14,right:14},
+    head:[['Cliente','Capital Prestado','% de la Cartera']],
+    body:conc.clientes.slice(0,5).map(function(c){return [c.nombre, fmtNum(c.cap), c.pct.toFixed(1)+'%'];}),
+    styles:{fontSize:8.5,cellPadding:3},
+    headStyles:{fillColor:[123,45,139],textColor:[255,255,255],fontStyle:'bold'},
+    columnStyles:{1:{halign:'right'},2:{halign:'right'}},
+    didDrawPage:function(){pdfWatermark(doc);pdfHeader(doc,titulo);}
+  });
+  y=doc.lastAutoTable.finalY+10;
+
+  // ── Sección: Desempeño por cobrador ──
+  if(cobs.length){
+    checkPageBreak(45);
+    seccionTitulo('DESEMPEÑO POR COBRADOR'+(desde||hasta?' (período seleccionado)':''));
+    doc.autoTable({
+      startY:y, margin:{left:14,right:14},
+      head:[['Cobrador','Total Recaudado','# Cobros','Clientes']],
+      body:cobs.map(function(c){return [c.nombre, fmtNum(c.totalCobrado), String(c.numCobros), String(c.clientesAtendidos)];}),
+      styles:{fontSize:8.5,cellPadding:3},
+      headStyles:{fillColor:[26,122,74],textColor:[255,255,255],fontStyle:'bold'},
+      columnStyles:{1:{halign:'right'}},
+      didDrawPage:function(){pdfWatermark(doc);pdfHeader(doc,titulo);}
+    });
+  }
+
+  var nombreArchivo='informe-ejecutivo-'+(CARTERA_NOMBRE||'cartera').replace(/\s+/g,'-')+'-'+h+'.pdf';
+  savePDF(doc,'analisis',nombreArchivo);
 }
 
 function renderAnalisis(){
@@ -8328,8 +9140,9 @@ function saveProducto(){
   var valorBase=+gVal('prod-base')||0;
   var chk=document.getElementById('prod-iva-check');
   var ivaPorcentaje=(chk&&chk.checked)?(+gVal('prod-iva-pct')||0):0;
-  if(!descripcion) return alert('Ingresa la descripción del insumo');
-  if(valorBase<=0) return alert('El valor base debe ser mayor a cero');
+  if(!descripcion) return customAlert('Ingresa la descripción del insumo');
+  if(valorBase<=0) return customAlert('El valor base debe ser mayor a cero');
+  if(ivaPorcentaje<0||ivaPorcentaje>100) return customAlert('El porcentaje de IVA debe estar entre 0 y 100.');
   var valorTotal=Math.round(valorBase*(1+ivaPorcentaje/100));
   DB.productos.push(Object.assign({id:DB.nextIds.producto,descripcion:descripcion,valorBase:valorBase,
     ivaPorcentaje:ivaPorcentaje,valorTotal:valorTotal},auditInfo('registro de insumo')));
@@ -8341,7 +9154,7 @@ function eliminarProducto(id){
   var p=DB.productos.find(function(x){return x.id===id;}); if(!p)return;
   var inv=calcInventario()[id];
   if(inv&&(inv.entradas>0||inv.ventas>0)){
-    alert('No se puede eliminar: este insumo ya tiene entradas o ventas registradas.');
+    customAlert('No se puede eliminar: este insumo ya tiene entradas o ventas registradas.');
     return;
   }
   askAdmin('Eliminar insumo "'+p.descripcion+'"','Valor total: '+fmt(p.valorTotal),function(){
@@ -8390,8 +9203,8 @@ function guardarEdicionProducto(id){
   var valorBase=+gVal('ep-base')||0;
   var chk=document.getElementById('ep-iva-check');
   var ivaPorcentaje=(chk&&chk.checked)?(+gVal('ep-iva-pct')||0):0;
-  if(!descripcion) return alert('La descripción no puede estar vacía');
-  if(valorBase<=0) return alert('El valor base debe ser mayor a cero');
+  if(!descripcion) return customAlert('La descripción no puede estar vacía');
+  if(valorBase<=0) return customAlert('El valor base debe ser mayor a cero');
   p.descripcion=descripcion; p.valorBase=valorBase; p.ivaPorcentaje=ivaPorcentaje;
   p.valorTotal=Math.round(valorBase*(1+ivaPorcentaje/100));
   save('productos');
@@ -8442,7 +9255,7 @@ function saveProveedor(){
   var contacto=gVal('prov-contacto').trim();
   var telefono=gVal('prov-telefono').trim();
   var direccion=gVal('prov-direccion').trim();
-  if(!nombre) return alert('Ingresa el nombre del proveedor');
+  if(!nombre) return customAlert('Ingresa el nombre del proveedor');
   DB.proveedores.push(Object.assign({id:DB.nextIds.proveedor,nombre:nombre,contacto:contacto,
     telefono:telefono,direccion:direccion},auditInfo('registro de proveedor')));
   DB.nextIds.proveedor++;
@@ -8453,7 +9266,7 @@ function eliminarProveedor(id){
   var pr=DB.proveedores.find(function(x){return x.id===id;}); if(!pr)return;
   var tieneEntradas=DB.entradas.some(function(e){return e.proveedorId===id;});
   if(tieneEntradas){
-    alert('No se puede eliminar: este proveedor ya tiene entradas registradas.');
+    customAlert('No se puede eliminar: este proveedor ya tiene entradas registradas.');
     return;
   }
   askAdmin('Eliminar proveedor "'+pr.nombre+'"','',function(){
@@ -8484,7 +9297,7 @@ function editarProveedor(id){
 function guardarEdicionProveedor(id){
   var pr=DB.proveedores.find(function(x){return x.id===id;}); if(!pr)return;
   var nombre=gVal('epr-nombre').trim();
-  if(!nombre) return alert('El nombre no puede estar vacío');
+  if(!nombre) return customAlert('El nombre no puede estar vacío');
   pr.nombre=nombre; pr.contacto=gVal('epr-contacto').trim();
   pr.telefono=gVal('epr-telefono').trim(); pr.direccion=gVal('epr-direccion').trim();
   save('proveedores');
@@ -8580,9 +9393,12 @@ function saveEntrada(){
   var costoVenta=+gVal('ent-costoventa')||0;
   var fecha=gVal('ent-fecha')||hoy();
   var observacion=gVal('ent-obs').trim();
-  if(!productoId) return alert('Selecciona un insumo');
-  if(cantidad<=0) return alert('La cantidad debe ser mayor a cero');
-  if(costoCompra<=0) return alert('El costo de compra debe ser mayor a cero');
+  if(!productoId) return customAlert('Selecciona un insumo');
+  if(cantidad<=0) return customAlert('La cantidad debe ser mayor a cero');
+  if(costoCompra<=0) return customAlert('El costo de compra debe ser mayor a cero');
+  if(margenPorcentaje<0) return customAlert('El margen no puede ser negativo.');
+  if(costoVenta<0) return customAlert('El costo de venta no puede ser negativo.');
+  if(fecha>hoy()) return customAlert('La fecha de la entrada no puede ser en el futuro.');
   DB.entradas.push(Object.assign({id:DB.nextIds.entrada,productoId:productoId,proveedorId:proveedorId,
     cantidad:cantidad,costoCompra:costoCompra,margenPorcentaje:margenPorcentaje,costoVenta:costoVenta,
     fecha:fecha,observacion:observacion},auditInfo('entrada de almacén')));
@@ -8636,8 +9452,8 @@ function guardarEdicionEntrada(id){
   var e=DB.entradas.find(function(x){return x.id===id;}); if(!e)return;
   var cantidad=+gVal('ee-cant')||0;
   var costoCompra=+gVal('ee-costo')||0;
-  if(cantidad<=0) return alert('La cantidad debe ser mayor a cero');
-  if(costoCompra<=0) return alert('El costo de compra debe ser mayor a cero');
+  if(cantidad<=0) return customAlert('La cantidad debe ser mayor a cero');
+  if(costoCompra<=0) return customAlert('El costo de compra debe ser mayor a cero');
   e.productoId=+gVal('ee-prod');
   e.proveedorId=+gVal('ee-prov')||null;
   e.cantidad=cantidad;
@@ -8924,62 +9740,77 @@ function registrarVenta(){
   var tipoRadio=document.querySelector('input[name="vta-tipo"]:checked');
   var tipoPago=tipoRadio?tipoRadio.value:'contado';
 
-  if(!productoId)return alert('Selecciona un insumo');
-  if(!clienteId)return alert('Selecciona un cliente');
-  if(cantidad<=0)return alert('La cantidad debe ser mayor a cero');
-  if(valorUnitario<=0)return alert('El valor unitario debe ser mayor a cero');
+  if(!productoId)return customAlert('Selecciona un insumo');
+  if(!clienteId)return customAlert('Selecciona un cliente');
+  if(cantidad<=0)return customAlert('La cantidad debe ser mayor a cero');
+  if(valorUnitario<=0)return customAlert('El valor unitario debe ser mayor a cero');
+  if(fecha>hoy())return customAlert('La fecha de la venta no puede ser en el futuro.');
 
   var p=DB.productos.find(function(x){return x.id===productoId;});
   var inv=calcInventario()[productoId];
   var stock=inv?inv.stock:0;
-  if(cantidad>stock){
-    if(!confirm('La cantidad ('+cantidad+') supera el stock disponible ('+stock+' und.). ¿Deseas continuar de todas formas?'))return;
-  }
 
-  var valorTotalVenta=Math.round(cantidad*valorUnitario);
-  var costoUnitarioCompra=costoCompraPromedio(productoId);
-  var utilidad=Math.round((valorUnitario-costoUnitarioCompra)*cantidad);
-  var creditoId=null;
+  function procesarVenta(){
+    var valorTotalVenta=Math.round(cantidad*valorUnitario);
+    var costoUnitarioCompra=costoCompraPromedio(productoId);
+    var utilidad=Math.round((valorUnitario-costoUnitarioCompra)*cantidad);
+    var creditoId=null;
 
-  if(tipoPago==='credito'){
-    var tasaMensual=+gVal('vta-tasa')||0;
-    var numeroCuotas=+gVal('vta-cuotas')||0;
-    var periodicidad=gVal('vta-periodo')||'mensual';
-    var tasaMoraDiaria=+gVal('vta-mora')||0.1;
-    var cuotaFija=+gVal('vta-cuota-val')||0;
-    if(numeroCuotas<1)return alert('El número de cuotas debe ser al menos 1');
-    if(!tasaMensual&&!cuotaFija)return alert('Ingresa la tasa de interés o el valor de la cuota');
-    if(!cuotaFija){
-      var r=tasaMensual/100, nc=numeroCuotas;
-      cuotaFija=Math.round(r===0?valorTotalVenta/nc:(valorTotalVenta*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1));
+    if(tipoPago==='credito'){
+      var tasaMensual=+gVal('vta-tasa')||0;
+      var numeroCuotas=+gVal('vta-cuotas')||0;
+      var periodicidad=gVal('vta-periodo')||'mensual';
+      var tasaMoraDiaria=+gVal('vta-mora')||0.1;
+      var cuotaFija=+gVal('vta-cuota-val')||0;
+      if(!Number.isInteger(numeroCuotas)||numeroCuotas<1)return customAlert('El número de cuotas debe ser un entero de 1 o más');
+      if(tasaMensual<0)return customAlert('La tasa de interés no puede ser negativa');
+      if(tasaMensual>100)return customAlert('La tasa de interés parece demasiado alta (más de 100% por periodo). Verifica el valor.');
+      if(tasaMoraDiaria<0)return customAlert('La tasa de mora diaria no puede ser negativa');
+      if(!tasaMensual&&!cuotaFija)return customAlert('Ingresa la tasa de interés o el valor de la cuota');
+      if(!cuotaFija){
+        var r=tasaMensual/100, nc=numeroCuotas;
+        cuotaFija=Math.round(r===0?valorTotalVenta/nc:(valorTotalVenta*r*Math.pow(1+r,nc))/(Math.pow(1+r,nc)-1));
+      }
+
+      var nuevoCredito=Object.assign({
+        id:DB.nextIds.credito, clienteId:clienteId, monto:valorTotalVenta,
+        tasaMensual:tasaMensual, numeroCuotas:numeroCuotas, periodicidad:periodicidad,
+        fechaDesembolso:fecha, concepto:'Venta almacén: '+p.descripcion+' x'+cantidad,
+        estado:'activo', tasaMoraDiaria:Math.round((tasaMoraDiaria/100)*10000)/10000, cuotaFija:cuotaFija,
+        origenAlmacen:true, ventaId:DB.nextIds.venta
+      },auditInfo('crédito generado por venta de almacén'));
+      DB.creditos.push(nuevoCredito);
+      creditoId=nuevoCredito.id;
+      DB.nextIds.credito++;
     }
 
-    var nuevoCredito=Object.assign({
-      id:DB.nextIds.credito, clienteId:clienteId, monto:valorTotalVenta,
-      tasaMensual:tasaMensual, numeroCuotas:numeroCuotas, periodicidad:periodicidad,
-      fechaDesembolso:fecha, concepto:'Venta almacén: '+p.descripcion+' x'+cantidad,
-      estado:'activo', tasaMoraDiaria:Math.round((tasaMoraDiaria/100)*10000)/10000, cuotaFija:cuotaFija,
-      origenAlmacen:true, ventaId:DB.nextIds.venta
-    },auditInfo('crédito generado por venta de almacén'));
-    DB.creditos.push(nuevoCredito);
-    creditoId=nuevoCredito.id;
-    DB.nextIds.credito++;
+    DB.ventas.push(Object.assign({
+      id:DB.nextIds.venta, productoId:productoId, clienteId:clienteId, cantidad:cantidad,
+      valorUnitario:valorUnitario, valorTotalVenta:valorTotalVenta, costoUnitarioCompra:costoUnitarioCompra,
+      utilidad:utilidad, fecha:fecha, tipoPago:tipoPago, creditoId:creditoId
+    },auditInfo('venta de almacén')));
+    DB.nextIds.venta++;
+
+    save('ventas'); save('nextIds');
+    if(tipoPago==='credito') save('creditos');
+
+    var msg='<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Venta registrada'
+      +(creditoId?' — crédito #'+creditoId+' creado en Créditos':' — utilidad de '+fmt(utilidad)+' registrada en Caja')+'.';
+    mostrarModal(msg,'ok');
+    renderVentasPanel();
   }
 
-  DB.ventas.push(Object.assign({
-    id:DB.nextIds.venta, productoId:productoId, clienteId:clienteId, cantidad:cantidad,
-    valorUnitario:valorUnitario, valorTotalVenta:valorTotalVenta, costoUnitarioCompra:costoUnitarioCompra,
-    utilidad:utilidad, fecha:fecha, tipoPago:tipoPago, creditoId:creditoId
-  },auditInfo('venta de almacén')));
-  DB.nextIds.venta++;
-
-  save('ventas'); save('nextIds');
-  if(tipoPago==='credito') save('creditos');
-
-  var msg='<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Venta registrada'
-    +(creditoId?' — crédito #'+creditoId+' creado en Créditos':' — utilidad de '+fmt(utilidad)+' registrada en Caja')+'.';
-  mostrarModal(msg,'ok');
-  renderVentasPanel();
+  if(cantidad>stock){
+    askConfirm({
+      titulo:'Stock insuficiente',
+      desc:'La cantidad ('+cantidad+') supera el stock disponible ('+stock+' und.). ¿Deseas continuar de todas formas?',
+      esperado:null,
+      btnTexto:'Continuar de todas formas',
+      cb:procesarVenta
+    });
+  } else {
+    procesarVenta();
+  }
 }
 function eliminarVenta(id){
   var v=DB.ventas.find(function(x){return x.id===id;}); if(!v)return;
@@ -9251,15 +10082,15 @@ function guardarEmpresaConfig(){
     const reader=new FileReader();
     reader.onload=function(e){
       GLOBAL.empresa={nombre,logo:e.target.result};
-      alert('Marca actualizada. Los próximos PDF que generes usarán este nombre y logo.');
+      customAlert('Marca actualizada. Los próximos PDF que generes usarán este nombre y logo.');
       renderDatos();
     };
-    reader.onerror=function(){ alert('No se pudo leer la imagen. Intenta con otra.'); };
+    reader.onerror=function(){ customAlert('No se pudo leer la imagen. Intenta con otra.'); };
     reader.readAsDataURL(file);
   } else {
     // Sin archivo nuevo: conservar el logo que ya estaba, solo cambia el nombre
     GLOBAL.empresa={nombre,logo:GLOBAL.empresa.logo};
-    alert('Marca actualizada. Los próximos PDF que generes usarán este nombre.');
+    customAlert('Marca actualizada. Los próximos PDF que generes usarán este nombre.');
     renderDatos();
   }
 }
@@ -9381,6 +10212,29 @@ function renderDatos(){
           </p>`}
       </div>
     </div>
+
+    ${isAdmin ? `
+    <div class="card" style="margin-bottom:22px">
+      <div class="card-header">
+        <span class="card-title"><i class="ico-i" style="color:#B07D12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><polyline points="12,7 12,12 15.5,14"/></svg></i> Cierre de Sesión por Inactividad</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">
+          Si el dispositivo lo comparten varios cobradores, esto cierra la sesión sola después de un tiempo sin uso — nada de lo ya guardado se pierde.
+        </p>
+        <div class="field" style="max-width:260px"><label>Cerrar sesión tras (minutos de inactividad)</label>
+          <select id="inact-min-select" onchange="setInactividadMin(+this.value)">
+            <option value="0" ${getInactividadMin()===0?'selected':''}>Nunca (desactivado)</option>
+            <option value="5" ${getInactividadMin()===5?'selected':''}>5 minutos</option>
+            <option value="10" ${getInactividadMin()===10?'selected':''}>10 minutos</option>
+            <option value="20" ${getInactividadMin()===20?'selected':''}>20 minutos</option>
+            <option value="30" ${getInactividadMin()===30?'selected':''}>30 minutos</option>
+            <option value="60" ${getInactividadMin()===60?'selected':''}>1 hora</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    ` : ''}
 
     ${isAdmin ? `
     <div class="card" style="margin-bottom:22px">
@@ -9514,7 +10368,7 @@ function renderDatos(){
                 if(info.status==='error')return '<i class="ico-i" style="color:#B07D12"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg></i> '+etiquetas[k]+': error — '+(info.error||'desconocido');
                 return '<i class="ico-i" style="color:#7A8699"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/></svg></i> '+etiquetas[k]+': no encontrado en Drive';
               });
-              alert('Resultado de la recarga desde Drive:\n\n'+lineas.join('\n'));
+              customAlert('Resultado de la recarga desde Drive:\n\n'+lineas.join('\n'));
             })">
             <i class="ico-i" style="color:#1B4F8A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.5"/><path d="M20 12a8 8 0 0 1-14.5 4.5"/><polyline points="17,3 18.5,7.5 14,7.5"/><polyline points="7,21 5.5,16.5 10,16.5"/></svg></i> Recargar desde Drive
           </button>
@@ -9810,7 +10664,7 @@ function renderAuditPanel(){
     </div>`;
 }
 function exportarExcel(){
-  if(!CARTERA_ID){alert('Debes tener una cartera activa para exportar.');return;}
+  if(!CARTERA_ID){customAlert('Debes tener una cartera activa para exportar.');return;}
   const wb=XLSX.utils.book_new();
   const h=hoy();
   const mkSheet=(data,cols)=>{
@@ -9911,7 +10765,7 @@ let importDataPending=null;
 function importarExcel(input){
   const sesion=GLOBAL.sesion;
   if((sesion&&sesion.rol)!=='admin'){
-    alert('Solo el Administrador puede importar datos.');
+    customAlert('Solo el Administrador puede importar datos.');
     if(input)input.value='';
     return;
   }
@@ -10042,24 +10896,38 @@ function importarExcel(input){
 }
 function confirmarImport(){
   if(!importDataPending)return;
-  if(!confirm(`¿Reemplazar los datos de la cartera "${CARTERA_NOMBRE}" con el backup?\n\n• ${importDataPending.clientes.length} clientes\n• ${importDataPending.creditos.length} créditos\n• ${importDataPending.pagos.length} pagos\n• ${importDataPending.gastos.length} gastos\n• ${(importDataPending.aportes||[]).length} aportes\n\nEsta acción no se puede deshacer.`))return;
-  DB.clientes=importDataPending.clientes;
-  DB.creditos=importDataPending.creditos;
-  DB.pagos=importDataPending.pagos;
-  DB.gastos=importDataPending.gastos;
-  DB.aportes=importDataPending.aportes||DB.aportes;
-  DB.nextIds=importDataPending.nextIds;
-  saveAll(); importDataPending=null;
-  document.getElementById('import-preview').innerHTML='';
-  document.getElementById('import-log').innerHTML=`<div class="import-log-item info-box-ok"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Datos importados y guardados correctamente en la cartera "${esc(CARTERA_NOMBRE)}".</div>`;
-  renderDatos();
+  askConfirm({
+    titulo:'Reemplazar datos de la cartera',
+    desc:`¿Reemplazar los datos de la cartera "${esc(CARTERA_NOMBRE)}" con el backup?<br><br>`
+      +`• ${importDataPending.clientes.length} clientes<br>`
+      +`• ${importDataPending.creditos.length} créditos<br>`
+      +`• ${importDataPending.pagos.length} pagos<br>`
+      +`• ${importDataPending.gastos.length} gastos<br>`
+      +`• ${(importDataPending.aportes||[]).length} aportes<br><br>`
+      +`Esta acción no se puede deshacer.`,
+    esperado:'REEMPLAZAR',
+    labelInput:'Escribe REEMPLAZAR para confirmar:',
+    btnTexto:'Reemplazar datos',
+    cb:function(){
+      DB.clientes=importDataPending.clientes;
+      DB.creditos=importDataPending.creditos;
+      DB.pagos=importDataPending.pagos;
+      DB.gastos=importDataPending.gastos;
+      DB.aportes=importDataPending.aportes||DB.aportes;
+      DB.nextIds=importDataPending.nextIds;
+      saveAll(); importDataPending=null;
+      document.getElementById('import-preview').innerHTML='';
+      document.getElementById('import-log').innerHTML=`<div class="import-log-item info-box-ok"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Datos importados y guardados correctamente en la cartera "${esc(CARTERA_NOMBRE)}".</div>`;
+      renderDatos();
+    }
+  });
 }
 // ══════════════════════════════════════════════════════
 // BACKUP GLOBAL — exporta/importa TODAS las carteras a la vez
 // ══════════════════════════════════════════════════════
 function exportarGlobal(){
   const sesion=GLOBAL.sesion;
-  if((sesion&&sesion.rol)!=='admin'){alert('Solo el Administrador puede generar el backup global.');return;}
+  if((sesion&&sesion.rol)!=='admin'){customAlert('Solo el Administrador puede generar el backup global.');return;}
   const wb=XLSX.utils.book_new();
   const h=hoy();
   const mkSheet=(data,cols)=>{
@@ -10138,7 +11006,7 @@ function exportarGlobal(){
 let importGlobalPending=null;
 function previsualizarImportGlobal(input){
   const sesion=GLOBAL.sesion;
-  if((sesion&&sesion.rol)!=='admin'){alert('Solo el Administrador puede importar un backup global.');if(input)input.value='';return}
+  if((sesion&&sesion.rol)!=='admin'){customAlert('Solo el Administrador puede importar un backup global.');if(input)input.value='';return}
   const file=input.files[0]; if(!file)return;
   const log=document.getElementById('import-global-log');
   const prev=document.getElementById('import-global-preview');
@@ -10313,11 +11181,11 @@ function confirmarImportGlobal(){
       const totalCreditos=Object.values(p.carterasData||{}).reduce((a,d)=>a+(d.creditos||[]).length,0);
       const resumenMsg=`<i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Backup Global importado correctamente:\n• ${p.carteras.length} cartera(s)\n• ${p.usuarios.length} usuario(s)\n• ${totalClientes} cliente(s)\n• ${totalCreditos} crédito(s)`;
       if(!userActual){
-        alert(resumenMsg+'\n\nTu usuario ya no existe en el backup importado. Cerrando sesión.');
+        customAlert(resumenMsg+'\n\nTu usuario ya no existe en el backup importado. Cerrando sesión.');
         doLogout();
       } else {
         GLOBAL.sesion={...GLOBAL.sesion,rol:userActual.rol};
-        alert(resumenMsg);
+        customAlert(resumenMsg);
         renderUsuarios();
         const logEl=document.getElementById('import-global-log');
         if(logEl)logEl.innerHTML='<div class="import-log-item info-box-ok"><i class="ico-i" style="color:#1E8E5A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,13 9,18 20,6"/></svg></i> Backup Global importado correctamente: '+p.carteras.length+' cartera(s), '+p.usuarios.length+' usuario(s), '+totalClientes+' cliente(s), '+totalCreditos+' crédito(s).</div>';
@@ -10643,7 +11511,7 @@ function editCartera(id){
 function saveCartera(){
   const sesion=GLOBAL.sesion;
   const nombre=document.getElementById('fc2-nombre').value.trim();
-  if(!nombre)return alert('El nombre de la cartera es obligatorio');
+  if(!nombre)return customAlert('El nombre de la cartera es obligatorio');
   const carteras=GLOBAL.carteras;
   if(editCarteraId){
     GLOBAL.carteras=carteras.map(c=>c.id===editCarteraId?{...c,nombre,descripcion:document.getElementById('fc2-desc').value.trim()}:c);
@@ -10769,11 +11637,11 @@ async function saveUsuario(){
   const usuario=document.getElementById('fu-usuario').value.trim();
   const claveNueva=document.getElementById('fu-clave').value.trim();
   const rol=document.getElementById('fu-rol').value;
-  if(!usuario)return alert('El nombre de usuario es obligatorio');
-  if(!editUsuarioId && !claveNueva)return alert('La contraseña es obligatoria para un usuario nuevo');
+  if(!usuario)return customAlert('El nombre de usuario es obligatorio');
+  if(!editUsuarioId && !claveNueva)return customAlert('La contraseña es obligatoria para un usuario nuevo');
   const todos=GLOBAL.usuarios;
   const dup=todos.find(u=>u.usuario.toLowerCase()===usuario.toLowerCase()&&u.id!==editUsuarioId);
-  if(dup)return alert('Ya existe un usuario con ese nombre');
+  if(dup)return customAlert('Ya existe un usuario con ese nombre');
   // Módulos marcados (solo aplica si el rol NO es admin; un admin siempre ve todo)
   const modulos=Array.from(document.querySelectorAll('.fu-mod-check')).filter(cb=>cb.checked).map(cb=>cb.dataset.mod);
   // La contraseña se guarda como hash+sal, nunca en texto plano (ver
@@ -10783,9 +11651,9 @@ async function saveUsuario(){
   if(editUsuarioId){
     const target=todos.find(u=>u.id===editUsuarioId);
     if((target&&target.usuario)===ADMIN.usuario&&usuario!==ADMIN.usuario)
-      return alert(`El usuario principal "${ADMIN.usuario}" no puede cambiar de nombre.`);
+      return customAlert(`El usuario principal "${ADMIN.usuario}" no puede cambiar de nombre.`);
     if((target&&target.usuario)===ADMIN.usuario&&rol!=='admin')
-      return alert(`El usuario principal "${ADMIN.usuario}" debe mantener el rol Administrador.`);
+      return customAlert(`El usuario principal "${ADMIN.usuario}" debe mantener el rol Administrador.`);
     const correoGoogle=document.getElementById('fu-correo-google').value.trim().toLowerCase();
     if(target&&target.rol!==rol){
       logGlobalAudit('cambio de rol','Usuario',`${usuario}: ${target.rol} → ${rol}`);
@@ -10818,8 +11686,8 @@ async function saveUsuario(){
 function eliminarUsuario(id){
   const sesion=GLOBAL.sesion;
   const u=GLOBAL.usuarios.find(x=>x.id===id);if(!u)return;
-  if(u.usuario===ADMIN.usuario)return alert('No se puede eliminar al administrador principal.');
-  if(u.usuario===(sesion&&sesion.usuario))return alert('No puedes eliminar tu propio usuario.');
+  if(u.usuario===ADMIN.usuario)return customAlert('No se puede eliminar al administrador principal.');
+  if(u.usuario===(sesion&&sesion.usuario))return customAlert('No puedes eliminar tu propio usuario.');
   askAdmin(`Eliminar usuario "${u.usuario}"`,`Rol: ${u.rol} — No se puede deshacer.`,()=>{
     logGlobalAudit('eliminación','Usuario',`${u.usuario} · rol: ${u.rol}`);
     GLOBAL.usuarios=GLOBAL.usuarios.filter(x=>x.id!==id);
