@@ -34,9 +34,13 @@
 <style>
 /* ── Reset & Base ── */
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;overflow-x:hidden}
+/* NOTA: usamos overflow-x:clip (no "hidden") en html/body a propósito.
+   "hidden" en el eje X de html/body rompe position:sticky en varios navegadores
+   (el sidebar deja de fijarse y se desplaza junto con el contenido). "clip" evita
+   el scroll horizontal sin ese efecto colateral. */
+html{scroll-behavior:smooth;overflow-x:clip}
 body{font-family:'Plus Jakarta Sans','Manrope',Inter,system-ui,sans-serif;
-  background:#D7E0F5;color:var(--text);min-height:100vh;overflow-x:hidden;position:relative;
+  background:#D7E0F5;color:var(--text);min-height:100vh;overflow-x:clip;position:relative;
   transition:background .25s ease,color .25s ease}
 body::before{content:'';position:fixed;inset:-10%;z-index:0;pointer-events:none;
   background:
@@ -160,7 +164,7 @@ nav{display:flex;flex-direction:column;gap:3px;padding:12px;flex:1;overflow-y:au
 .sidebar.collapsed .nav-btn:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
 .sidebar-bottom{padding:12px;border-top:1px solid rgba(255,255,255,.1);flex-shrink:0}
 
-/* ══ Dynamic nav submenus (Módulos integrados al panel izquierdo) ══ */
+/* ══ Dynamic nav submenus (Panel flotante — flyout a la derecha del sidebar) ══ */
 .nav-group{display:flex;flex-direction:column}
 .nav-group .nav-btn{padding-right:8px}
 .nav-chevron{margin-left:auto;flex-shrink:0;width:14px;height:14px;display:flex;align-items:center;
@@ -168,10 +172,9 @@ nav{display:flex;flex-direction:column;gap:3px;padding:12px;flex:1;overflow-y:au
 .nav-chevron svg{width:11px;height:11px}
 .nav-btn.active .nav-chevron{opacity:.85}
 .nav-group.open>.nav-btn .nav-chevron{transform:rotate(90deg)}
-.nav-submenu{max-height:0;overflow:hidden;opacity:0;display:flex;flex-direction:column;gap:2px;
-  padding-left:10px;margin:0;transition:max-height .36s cubic-bezier(.4,0,.2,1),opacity .26s ease,margin .3s ease}
-.nav-group.open>.nav-submenu{max-height:420px;opacity:1;margin:4px 0 6px}
-.sidebar.collapsed .nav-submenu,.sidebar.collapsed .nav-chevron{display:none}
+/* El acordeón inline queda desactivado a propósito: el contenido ahora vive en #nav-flyout */
+.nav-submenu{display:none!important}
+.sidebar.collapsed .nav-chevron{display:none}
 
 .nav-sub-item{display:flex;align-items:center;gap:9px;padding:8px 10px 8px 12px;border-radius:9px;
   border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,.66);font-family:inherit;
@@ -186,6 +189,21 @@ nav{display:flex;flex-direction:column;gap:3px;padding:12px;flex:1;overflow-y:au
 .nav-sub-text{display:flex;flex-direction:column;gap:0;line-height:1.28;overflow:hidden}
 .nav-sub-label{font-size:12px;white-space:nowrap}
 .nav-sub-sub{font-size:9px;opacity:.6;font-weight:400;white-space:nowrap}
+
+/* ── Panel flotante (flyout) — se abre a la derecha del sidebar, no dentro de él ── */
+#nav-flyout{position:fixed;background:linear-gradient(165deg,var(--navy) 0%,var(--navy2) 55%,#1B3568 100%);
+  border-radius:14px;min-width:238px;max-width:270px;max-height:min(78vh,560px);overflow-y:auto;
+  padding:8px;display:flex;flex-direction:column;gap:2px;z-index:250;
+  box-shadow:0 18px 46px rgba(8,16,38,.45),0 4px 14px rgba(0,0,0,.25),0 0 0 1px rgba(255,255,255,.06);
+  opacity:0;transform:translateX(-22px) scale(.88);transform-origin:0% 50%;pointer-events:none;
+  transition:opacity .3s cubic-bezier(.34,1.56,.64,1),transform .38s cubic-bezier(.34,1.56,.64,1)}
+#nav-flyout.open{opacity:1;transform:translateX(0) scale(1);pointer-events:auto}
+#nav-flyout::-webkit-scrollbar{width:7px}
+#nav-flyout::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:6px}
+.nav-flyout-head{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;
+  letter-spacing:1.1px;padding:8px 10px 9px;border-bottom:1px solid rgba(255,255,255,.14);
+  margin-bottom:4px;display:flex;align-items:center;gap:7px;position:sticky;top:0;
+  background:linear-gradient(165deg,var(--navy) 0%,var(--navy2) 90%);z-index:1}
 
 /* Iconos monocromáticos con relieve 3D (badges) */
 .ico3d{flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;
@@ -471,7 +489,7 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
 }
 /* ── Teléfonos (Android/iOS): sidebar como drawer a pantalla completa ── */
 @media(max-width:680px){
-  body{overflow-x:hidden}
+  body{overflow-x:clip}
   main{padding:12px;max-width:100%}
   header{justify-content:space-between;padding:8px 12px;height:auto;min-height:56px}
   .mobile-menu-btn{display:flex}
@@ -573,54 +591,6 @@ html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:rgba(200,215,
     </div>
     <div class="login-footer"><i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="1.6"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></i> Acceso restringido — Solo personal autorizado</div>
     <div class="login-copyright">© 2026 David Mercado Pastor — Todos los derechos reservados</div>
-
-    <!-- GOOGLE DRIVE EN LOGIN — para sincronizar usuarios/carteras al entrar desde otro dispositivo/navegador -->
-    <div id="login-gd-panel" style="margin-top:16px;padding:12px 14px;background:#F4F7FF;border:1.5px solid #C9D6F0;border-radius:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <span style="font-size:11.5px;color:#1A3260;font-weight:600">
-          <i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5a4.5 4.5 0 0 1-.4-9 5.5 5.5 0 0 1 10.6-1.7A4.2 4.2 0 0 1 17.5 18.5z"/></svg></i> Sincronizar con Google Drive
-        </span>
-        <span id="login-gd-status" style="font-size:10.5px;font-weight:700;color:#8A9AB8">⏳ Verificando...</span>
-      </div>
-      <div id="login-gd-desc" style="font-size:10.5px;color:#5A6E9A;margin-top:4px;line-height:1.4">
-        Conecta tu cuenta de Google para ver las mismas carteras y datos que en tu otro dispositivo.
-      </div>
-      <button id="login-gd-btn" onclick="GD.requestToken()" style="display:none;margin-top:8px;width:100%;
-        align-items:center;justify-content:center;gap:6px;padding:7px 12px;border-radius:7px;
-        border:1.5px solid #4285F4;background:#fff;color:#4285F4;font-size:11.5px;font-weight:700;cursor:pointer">
-        <svg width="13" height="13" viewBox="0 0 24 24" style="flex-shrink:0">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Conectar con Google
-      </button>
-    </div>
-
-    <!-- PANEL DE RECUPERACIÓN DE EMERGENCIA -->
-    <div style="margin-top:18px;border-top:1px solid #E0E8F0;padding-top:14px">
-      <details>
-        <summary style="cursor:pointer;font-size:11px;color:#8A9AB8;font-weight:600;user-select:none">
-          <i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.1 5.9l-1.7 1.7M7.6 16.5l-1.7 1.7M18.1 18.1l-1.7-1.7M7.6 7.5 5.9 5.8"/></svg></i> Opciones de recuperación (si la app no responde)
-        </summary>
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:11px;color:#8A9AB8;line-height:1.5;padding:8px 10px;background:#F4F7FF;border-radius:7px">
-            Si la aplicación muestra pantalla en blanco o no responde, usa estas opciones para recuperar el acceso. <strong>Los datos NO se eliminan</strong> con las primeras opciones.
-          </div>
-          <button onclick="emergencyReloadGlobal()" style="padding:8px 12px;background:#3B82C4;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">
-            <i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14.5-4.5"/><path d="M20 12a8 8 0 0 1-14.5 4.5"/><polyline points="17,3 18.5,7.5 14,7.5"/><polyline points="7,21 5.5,16.5 10,16.5"/></svg></i> Recargar configuración del sistema
-          </button>
-          <button onclick="emergencyDiagnose()" style="padding:8px 12px;background:#C9A84C;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">
-            <i class="ico-i" style="color:#1B4F8A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="21" y2="21"/></svg></i> Diagnosticar datos en memoria
-          </button>
-          <button onclick="emergencyHardReset()" style="padding:8px 12px;background:#C0392B;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">
-            <i class="ico-i" style="color:#C0392B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4.8A1 1 0 0 1 10 3.8h4a1 1 0 0 1 1 1V7"/><path d="M6 7l1 13a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9L18 7"/><line x1="10" y1="11" x2="10" y2="16.5"/><line x1="14" y1="11" x2="14" y2="16.5"/></svg></i> RESET TOTAL — Borrar todos los datos y empezar de cero
-          </button>
-          <div id="emergency-output" style="font-size:11px;font-family:monospace;background:#0F2044;color:#C9A84C;padding:10px;border-radius:7px;white-space:pre-wrap;display:none;max-height:180px;overflow-y:auto"></div>
-        </div>
-      </details>
-    </div>
   </div>
 </div>
 
@@ -2741,6 +2711,7 @@ function toggleSidebar(){
   localStorage.setItem('cc_sidebar_collapsed', collapsed?'1':'0');
   const btn=document.getElementById('sidebar-toggle');
   if(btn)btn.title=collapsed?'Expandir menú':'Colapsar menú';
+  if(typeof closeNavFlyout==='function') closeNavFlyout();
 }
 function _applySidebarState(){
   const sb=document.getElementById('sidebar');
@@ -3161,24 +3132,24 @@ function chevronRight(){return '<span class="nav-chevron"><svg viewBox="0 0 24 2
 
 // ══ Configuración de módulos dinámicos por sección ══
 const NAV_SUBMENUS = {
-  clientes:{setter:'setClientesSubTab', prefix:'cli-stab-', items:[
+  clientes:{setter:'setClientesSubTab', prefix:'cli-stab-', flyoutTitle:'Clientes · Secciones', items:[
     {id:'lista', icon:'user', label:'Lista de Clientes', sub:'Registros y gestión'},
     {id:'score', icon:'star', label:'Score Crediticio', sub:'Calificación 0.0–5.0'}
   ]},
-  cobros:{setter:'setCobrosSubTab', prefix:'cob-stab-', items:[
+  cobros:{setter:'setCobrosSubTab', prefix:'cob-stab-', flyoutTitle:'Cobros · Módulos', items:[
     {id:'cobros', icon:'card', label:'Cobros', sub:'Registro e historial'},
     {id:'refinanciacion', icon:'refresh', label:'Refinanciación', sub:'Reestructurar crédito'},
     {id:'castigo', icon:'trash', label:'Castigo de Cartera', sub:'Dar de baja crédito'},
     {id:'estado', icon:'doc', label:'Estado de Cuenta', sub:'Extracto por crédito'},
     {id:'proyeccion', icon:'calendar', label:'Proyección', sub:'Cobros futuros'}
   ]},
-  caja:{setter:'setCajaSubTab', prefix:'caja-stab-', items:[
+  caja:{setter:'setCajaSubTab', prefix:'caja-stab-', flyoutTitle:'Caja · Secciones', items:[
     {id:'resumen', icon:'barchart', label:'Resumen', sub:'Vista general'},
     {id:'capital', icon:'coin', label:'Capital', sub:'Registrar & historial'},
     {id:'gastos', icon:'receipt', label:'Gastos', sub:'Registrar & historial'},
     {id:'movimientos', icon:'list', label:'Movimientos', sub:'Flujo de caja'}
   ]},
-  analisis:{setter:'setAnalisisSubTab', prefix:'an-stab-', items:[
+  analisis:{setter:'setAnalisisSubTab', prefix:'an-stab-', flyoutTitle:'Análisis · Secciones', items:[
     {id:'resumen', icon:'barchart', label:'Resumen', sub:'KPIs generales'},
     {id:'evol1', icon:'linechart', label:'Evolución Mensual', sub:'Cartera vs Recaudo'},
     {id:'evol2', icon:'coin', label:'Capital · Intereses', sub:'Utilidad Acumulada'},
@@ -3194,7 +3165,7 @@ const NAV_SUBMENUS = {
     {id:'concentracion', icon:'building', label:'Concentración', sub:'Riesgo por cliente'},
     {id:'comparativo', icon:'barchart', label:'Comparativo', sub:'Este mes vs anterior'},
   ]},
-  almacen:{setter:'setAlmacenSubTab', prefix:'alm-stab-', items:[
+  almacen:{setter:'setAlmacenSubTab', prefix:'alm-stab-', flyoutTitle:'Almacén · Módulos', items:[
     {id:'productos', icon:'tag', label:'Insumos y Equipos', sub:'Catálogo de productos'},
     {id:'proveedores', icon:'truck', label:'Proveedores', sub:'Catálogo de proveedores'},
     {id:'inventario', icon:'box', label:'Inventario', sub:'Existencias actuales'},
@@ -3219,33 +3190,97 @@ function buildNavSubmenu(tabId){
   }).join('');
 }
 
-function toggleNavGroup(tabId, forceOpen){
-  document.querySelectorAll('.nav-group').forEach(function(g){
-    const isThis = g.dataset.tab===tabId;
-    if(forceOpen===false){ g.classList.remove('open'); return; }
-    if(isThis){ g.classList.toggle('open', forceOpen===true ? true : !g.classList.contains('open')); }
-    else { g.classList.remove('open'); }
-  });
+// ── Panel flotante de submódulos (flyout) ──
+// Se abre a la derecha del sidebar (no empuja ni obliga a scrollear el panel de navegación),
+// con una animación de entrada más marcada (pop + slide) y se puede cerrar con:
+// - clic de nuevo en el mismo botón padre
+// - clic fuera del panel
+// - tecla Escape
+// - al cambiar a otra sección del menú principal
+let _navFlyoutTabId = null;
+
+function _getNavFlyoutEl(){
+  let fly = document.getElementById('nav-flyout');
+  if(!fly){
+    fly = document.createElement('div');
+    fly.id = 'nav-flyout';
+    fly.className = 'nav-flyout';
+    document.body.appendChild(fly);
+  }
+  return fly;
 }
+
+function openNavFlyout(tabId, anchorBtn){
+  const cfg = NAV_SUBMENUS[tabId];
+  if(!cfg || !anchorBtn) return;
+  const fly = _getNavFlyoutEl();
+  fly.innerHTML = '<div class="nav-flyout-head">'+ (cfg.flyoutTitle || 'Secciones') +'</div>' + buildNavSubmenu(tabId);
+  const btnRect = anchorBtn.getBoundingClientRect();
+  const sidebarEl = document.getElementById('sidebar');
+  const sidebarRect = sidebarEl ? sidebarEl.getBoundingClientRect() : {right:76};
+  fly.style.left = Math.round(sidebarRect.right + 10) + 'px';
+  fly.style.top = Math.round(btnRect.top) + 'px';
+  fly.classList.add('open');
+  requestAnimationFrame(function(){
+    // Si se desborda por abajo o por la derecha, reubicar dentro del viewport
+    const h = fly.offsetHeight, w = fly.offsetWidth;
+    let top = btnRect.top;
+    if(top + h > window.innerHeight - 12) top = Math.max(12, window.innerHeight - h - 12);
+    fly.style.top = Math.round(top) + 'px';
+    if(sidebarRect.right + 10 + w > window.innerWidth - 8){
+      fly.style.left = Math.max(8, window.innerWidth - w - 8) + 'px';
+    }
+  });
+  document.querySelectorAll('.nav-group').forEach(function(g){
+    g.classList.toggle('open', g.dataset.tab===tabId);
+  });
+  _navFlyoutTabId = tabId;
+}
+
+function closeNavFlyout(){
+  const fly = document.getElementById('nav-flyout');
+  if(fly) fly.classList.remove('open');
+  document.querySelectorAll('.nav-group').forEach(g=>g.classList.remove('open'));
+  _navFlyoutTabId = null;
+}
+
+function refreshNavFlyout(tabId){
+  if(_navFlyoutTabId !== tabId) return;
+  const fly = document.getElementById('nav-flyout');
+  const cfg = NAV_SUBMENUS[tabId];
+  if(fly && cfg) fly.innerHTML = '<div class="nav-flyout-head">'+ (cfg.flyoutTitle || 'Secciones') +'</div>' + buildNavSubmenu(tabId);
+}
+
+document.addEventListener('click', function(e){
+  const fly = document.getElementById('nav-flyout');
+  if(!fly || !fly.classList.contains('open')) return;
+  if(fly.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('.nav-btn[data-tab]')) return; // su propio onclick decide
+  closeNavFlyout();
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeNavFlyout();
+});
+window.addEventListener('resize', closeNavFlyout);
+
 
 function navSubClick(tabId, subId){
   const activeSection=document.querySelector('.section.active');
   const alreadyOn = activeSection && activeSection.id==='tab-'+tabId;
+  const mainBtn=document.querySelector('.nav-btn[data-tab="'+tabId+'"]');
   if(!alreadyOn){
-    const mainBtn=document.querySelector('.nav-btn[data-tab="'+tabId+'"]');
     switchTab(tabId, mainBtn);
   }
+  if(_navFlyoutTabId !== tabId) openNavFlyout(tabId, mainBtn);
   setTimeout(function(){
     const cfg=NAV_SUBMENUS[tabId];
     if(cfg && typeof window[cfg.setter]==='function') window[cfg.setter](subId);
   }, alreadyOn?0:30);
-  toggleNavGroup(tabId, true);
 }
 
 function initNavSubmenus(){
-  document.querySelectorAll('.nav-submenu[data-tab]').forEach(function(el){
-    el.innerHTML = buildNavSubmenu(el.dataset.tab);
-  });
+  // El contenido de los submódulos ahora se genera bajo demanda dentro de #nav-flyout
+  // (ver openNavFlyout/refreshNavFlyout). Ya no se precarga en el DOM del sidebar.
 }
 initNavSubmenus();
 
@@ -3264,7 +3299,11 @@ function switchTab(id,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
-  if(NAV_SUBMENUS[id]) toggleNavGroup(id, true); else toggleNavGroup(null, false);
+  if(NAV_SUBMENUS[id]){
+    if(_navFlyoutTabId===id) closeNavFlyout(); else openNavFlyout(id, btn||document.querySelector('.nav-btn[data-tab="'+id+'"]'));
+  } else {
+    closeNavFlyout();
+  }
   try{
     RENDERS[id]();
     if(id==='cobros') setCobrosSubTab(_cobrosSubTab||'cobros');
